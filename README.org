@@ -1,0 +1,44 @@
+#+title: Play with finite difference
+
+* Install
+
+This needs Numpy and matplotlib and can use PyTorch.
+
+Set up a virtual environment eg:
+
+#+begin_example
+python3 -m venv venv
+source venv/bin/activiate
+#+end_example
+
+Or maybe you prefer ~direnv~
+
+#+begin_example
+echo layout python3 > .envrc
+direnv allow
+#+end_example
+
+Then:
+
+#+begin_example
+pip install matplotlib
+#+end_example
+
+In principle, PyTorch can be installed as easily as:
+
+#+begin_example
+pip install torch
+#+end_example
+
+But, additional work may be needed to get GPU support going.
+
+* Usage
+
+Set up environment as above
+
+#+begin_example
+python stencil2d.py
+xdg-open stencil2d.pdf
+#+end_example
+
+Each page is a snapshot of the solution.

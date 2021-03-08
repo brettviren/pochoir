@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 
-import torch
+try:
+    import torch as arrays
+    def tocpu(a):
+        return a.to('cpu')
+    def togpu(a):
+        return a.to('cuda')
+except ImportError:
+    import numpy as arrays
+    def tocpu(a):
+        return a
+    def togpu(a):
+        return a
 
 def make_domain(shape):
     '''Return a domain grid object with target area of the given shape.
@@ -8,7 +19,7 @@ def make_domain(shape):
     Target is indexed along one dimension as [1:-1]
     '''
     padded = [s+2 for s in shape]
-    return torch.zeros(padded)
+    return arrays.zeros(padded)
 
 def edge_conditions1d(grid, *cond):
     if cond[0] == "periodic":

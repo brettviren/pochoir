@@ -2,7 +2,6 @@
 
 from pochoir import *
 
-#import numpy
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 # The domain.  In a real problem this will be very large and we should
@@ -67,15 +66,15 @@ def subarray(arr, i, j):
 
 phi1 = make_domain(shape)
 phi2 = make_domain(shape)
-phi1 = phi1.to('cuda')
-phi2 = phi2.to('cuda')
+phi1 = togpu(phi1)
+phi2 = togpu(phi2)
 
 boundary_values(phi1)
 
 def plotit(grid, title=""):
     plt.clf()
     plt.title(title)
-    plt.imshow(grid.cpu(), interpolation='none', aspect='auto')
+    plt.imshow(tocpu(grid), interpolation='none', aspect='auto')
     plt.colorbar()
     pdf.savefig()
 
@@ -103,8 +102,8 @@ with PdfPages('stencil2d.pdf') as pdf:
 
         if step==0 or step%toplot == 0:
             err = phi1 - phi2
-            abserr = torch.abs(err)
-            maxerr = torch.max(abserr)
-            toterr = torch.sum(abserr)
+            abserr = arrays.abs(err)
+            maxerr = arrays.max(abserr)
+            toterr = arrays.sum(abserr)
             print(f'{step}: maxerr:{maxerr} avgerr:{toterr}')
 
