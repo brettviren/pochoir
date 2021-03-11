@@ -73,11 +73,14 @@ saving stencil2d-500-torch.npz
 printing stencil2d-500-torch.pdf
 #+end_example
 
-Default 50k steps gives solution
+Timing above is on i7-9750H CPU @ 2.60GHz, GeForce GTX 1650 Mobile /
+Max-Q.
+
+Default 50k steps gives solution:
 
 [[file:stencil2d-50000-torch-solution.png]]
 
-And "error" (log10 absolute difference with prior step)
+And an "error" (log10 absolute difference with prior step)
 
 [[file:stencil2d-50000-torch-error.png]]
 
