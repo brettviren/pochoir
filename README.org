@@ -1,4 +1,5 @@
 #+title: Play with finite difference
+#+EXPORT_FILE_NAME: index.html
 
 * Install
 
@@ -36,9 +37,47 @@ But, additional work may be needed to get GPU support going.
 
 Set up environment as above
 
+#+begin_src shell :exports both :results output code :wrap example
+python stencil2d.py numpy 500
+#+end_src
+
+#+RESULTS:
 #+begin_example
-python stencil2d.py
-xdg-open stencil2d.pdf
+Using numpy
+500 steps
+100: maxerr:16.50219718185417 dt:1.6942028999328613
+200: maxerr:6.381780701032994 dt:3.3686211109161377
+300: maxerr:3.2621827043574285 dt:5.0668885707855225
+400: maxerr:2.3078917452478436 dt:6.760533094406128
+nsteps:500 dt:8.43262529373169s (59.3 Hz)
+saving stencil2d-500-numpy.npz
+printing stencil2d-500-numpy.pdf
 #+end_example
 
-Each page is a snapshot of the solution.
+If PyTorch is working for you:
+
+#+begin_src shell :exports both :results output code :wrap example
+python stencil2d.py torch 500
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Using torch
+500 steps
+100: maxerr:16.5023193359375 dt:0.2192213535308838
+200: maxerr:6.3817138671875 dt:0.4364333152770996
+300: maxerr:3.26220703125 dt:0.6530659198760986
+400: maxerr:2.30792236328125 dt:0.8703389167785645
+nsteps:500 dt:1.0253400802612305s (487.6 Hz)
+saving stencil2d-500-torch.npz
+printing stencil2d-500-torch.pdf
+#+end_example
+
+Default 50k steps gives solution
+
+[[file:stencil2d-50000-torch-solution.png]]
+
+And "error" (log10 absolute difference with prior step)
+
+[[file:stencil2d-50000-torch-error.png]]
+

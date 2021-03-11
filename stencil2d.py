@@ -1,12 +1,38 @@
 #!/usr/bin/env python
+import os
+import sys
+import time
+import numpy
+import pochoir
 
-from pochoir import *
+
+try:
+    arrays = sys.argv[1]
+except IndexError:
+    arrays = "numpy"
+
+if arrays == "torch":
+    amod = pochoir.Torch()
+else:
+    amod = pochoir.Numpy()
+print(f'Using {arrays}')
+
+try:
+    nsteps = int(sys.argv[2])
+except:
+    nsteps = 50000
+ntoplot = nsteps // 5
+
+print(f'{nsteps} steps')
+
+
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 # The domain.  In a real problem this will be very large and we should
 # limit the number of dense arrays of this shape.
 shape=(2000,2000)
+
 
 def es_boundary_values(arr):
     s = arr.shape
@@ -57,53 +83,64 @@ def toy_boundary_values(arr):
 
 def boundary_values(arr):
     toy_boundary_values(arr)
-    edge_conditions2d(arr, "periodic", "fixed" )
+    pochoir.edge_conditions2d(arr, "periodic", "fixed" )
 
-def subarray(arr, i, j):
-    sa = arr[1+i:1+i+shape[0],
-             1+j:1+j+shape[1]]
-    return sa
-
-phi1 = make_domain(shape)
-phi2 = make_domain(shape)
-phi1 = togpu(phi1)
-phi2 = togpu(phi2)
+phi1 = pochoir.make_domain(amod, shape)
+phi2 = pochoir.make_domain(amod, shape)
+bv = pochoir.make_domain(amod, shape)
 
 boundary_values(phi1)
+boundary_values(bv)
+tocalc = bv == 0.
 
-def plotit(grid, title=""):
+def plotit(arr, title=""):
     plt.clf()
     plt.title(title)
-    plt.imshow(tocpu(grid), interpolation='none', aspect='auto')
+    plt.imshow(arr, interpolation='none', aspect='auto')
     plt.colorbar()
     pdf.savefig()
 
-with PdfPages('stencil2d.pdf') as pdf:
-    nsteps = 5000
-    toplot = 1000
-    for step in range(nsteps):
+toplot = list()
 
-        # if step==0 or step%toplot == 0:
-        #     plotit(phi1, f'solution (step {step})')
+start_time = time.time()
+for step in range(nsteps):
 
+    if step==0:
+        toplot.append((f'solution {step}', amod.tocpu(phi1[1:-1, 1:-1])))
+
+    # save pre-update solution, if we want to check error
+    if step>1 and step%ntoplot == 0:
         phi2[1:-1, 1:-1] = phi1[1:-1, 1:-1]
 
-        # stencil reduces by 2, save back to "core"
-        phi1[1:-1, 1:-1] = stencil2d(phi1)
+    # update
+    phi1[1:-1, 1:-1] = pochoir.stencil2d(phi1)
+    boundary_values(phi1)
 
-        # if step==0 or step%toplot == 0:
-        #     plotit(phi1, f'solution (step {step}+1)')
+    if step>1 and step%ntoplot == 0:
+        err = phi1 - phi2
+        abserr = amod.abs(err)
+        toplot.append((f'error {step}', amod.tocpu(abserr[1:-1, 1:-1])))
+        toplot.append((f'solution {step}', amod.tocpu(phi1[1:-1, 1:-1])))
+        maxerr = amod.max(abserr[tocalc])
+        dt = time.time() - start_time
+        print(f'{step}: maxerr:{maxerr} dt:{dt}')
 
-        # restore boundary
-        boundary_values(phi1)
-        
-        if step==0 or step%toplot == 0:
-            plotit(phi1, f'solution (step {step}+1)')
+stop_time = time.time()
+dt = stop_time - start_time
+hz = nsteps/dt
+print(f'nsteps:{nsteps} dt:{dt}s ({hz:.1f} Hz)')
 
-        if step==0 or step%toplot == 0:
-            err = phi1 - phi2
-            abserr = arrays.abs(err)
-            maxerr = arrays.max(abserr)
-            toterr = arrays.sum(abserr)
-            print(f'{step}: maxerr:{maxerr} avgerr:{toterr}')
+fname = f'stencil2d-{nsteps}-{arrays}.npz'
+print(f'saving {fname}')
+numpy.savez(fname, solution=toplot[-1][1], error=toplot[-2][1])
 
+eps = 1e-8
+fname = f'stencil2d-{nsteps}-{arrays}.pdf'
+print(f'printing {fname}')
+with PdfPages(fname) as pdf:
+    for tit, arr in toplot:
+        if tit.startswith("solution"):
+            plotit(arr, tit)
+        else:
+            arr[arr<eps] = eps
+            plotit(numpy.log10(arr), tit)

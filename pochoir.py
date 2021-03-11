@@ -1,25 +1,44 @@
 #!/usr/bin/env python3
 
-try:
-    import torch as arrays
-    def tocpu(a):
-        return a.to('cpu')
-    def togpu(a):
-        return a.to('cuda')
-except ImportError:
-    import numpy as arrays
-    def tocpu(a):
-        return a
-    def togpu(a):
-        return a
+import numpy
 
-def make_domain(shape):
+class Torch:
+    def __init__(self, mod=None):
+        if not mod:
+            import torch
+            mod = torch
+        self.mod = mod 
+
+    def tocpu(self, array):
+        return array.to('cpu').numpy()
+    def togpu(self, array):
+        return array.to('cuda')
+
+    def __getattr__(self, key):
+        return getattr(self.mod, key)
+
+class Numpy:
+    def __init__(self, mod=None):
+        if not mod:
+            mod = numpy
+        self.mod = mod
+        
+    def tocpu(self, array):
+        return self.mod.array(array)
+    def togpu(self, array):
+        return self.mod.array(array)
+
+    def __getattr__(self, key):
+        return getattr(self.mod, key)
+
+
+def make_domain(arrays, shape):
     '''Return a domain grid object with target area of the given shape.
 
     Target is indexed along one dimension as [1:-1]
     '''
     padded = [s+2 for s in shape]
-    return arrays.zeros(padded)
+    return arrays.togpu(arrays.zeros(padded))
 
 def edge_conditions1d(grid, *cond):
     if cond[0] == "periodic":
