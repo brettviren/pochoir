@@ -29,4 +29,4 @@ def test_various():
     a3 = s3.get("a")
     print(dict(a3.attrs))
     assert a3.attrs['key1'] == "val1"
-    os.unlink(fname)
+#    os.unlink(fname)

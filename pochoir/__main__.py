@@ -5,6 +5,7 @@ CLI to pochoir
 
 import click
 import pochoir
+# no others than click and pochoir!
 
 @click.group()
 @click.option("-s","--store",type=click.Path(),
@@ -50,6 +51,18 @@ def example(ctx, name):
     ctx.obj.put(f'{name}-boundary', barr)
     
 
+@cli.command()
+@click.argument("scalar")
+@click.argument("vector")
+@click.pass_context
+def grad(ctx, scalar, vector):
+    '''
+    Calculate the gradient of a scalar field.
+    '''
+    pot = ctx.obj.get(scalar)
+    field = pochoir.arrays.gradient(pot)
+    ctx.obj.put(vector, field, scalar=scalar, operation="grad")
+
 
 @cli.command()
 @click.option("-i","--initial", type=str,
@@ -77,11 +90,15 @@ def fdm(ctx, initial, boundary,
     '''
     iarr = ctx.obj.get(initial)
     barr = ctx.obj.get(boundary)
-    edges = [e.startswith("per") for e in edges.split(",")]
-    arr, err = pochoir.fdm.solve(iarr, barr, edges, precision, epoch, nepochs)
-    print(arr.shape, err.shape)
-    ctx.obj.put(solution, arr)
-    ctx.obj.put(error, err)
+    bool_edges = [e.startswith("per") for e in edges.split(",")]
+    arr, err = pochoir.fdm.solve(iarr, barr, bool_edges,
+                                 precision, epoch, nepochs)
+    params = dict(operation="fdm", 
+                  initial=intiial, boundary=boundary,
+                  edges=edges, epoch=epoch, nepochs=nepochs,
+                  precision=precision)
+    ctx.obj.put(solution, arr, result="solution", **params)
+    ctx.obj.put(error, err, result="error", **params)
     
 @cli.command()
 @click.argument("dataset")

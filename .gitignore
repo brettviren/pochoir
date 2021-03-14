@@ -8,3 +8,6 @@ __pycache__
 *.png
 *.egg-info
 *.pdf
+*.json
+notes.*
+*.hdf

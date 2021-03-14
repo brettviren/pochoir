@@ -28,8 +28,24 @@ def to_torch(array):
     '''
     Return array or a new torch tensor if not already one.
     '''
-    return torch.Tensor(array)
+    return torch.tensor(array)
     
+def gradient(array):
+    '''
+    Return the finite difference gradient of the array.
+    '''
+    if isinstance(array, numpy.ndarray):
+        return numpy.array(numpy.gradient(array))
+
+    # Amazingly, PyTorch has no equivalent.  An alternative solution
+    # is to reimplment numpy.gradient() in terms of tensor slicing and
+    # arithmetic operations.  At the cost of possible GPU->CPU->GPU
+    # transit, for now we do the dirty:
+    a = array.to('cpu').numpy()
+    g = numpy.array(numpy.gradient(a))
+    return torch.tensor(g, device=array.device)
+    
+
 def dup(array):
     '''
     Return a copy of the array
