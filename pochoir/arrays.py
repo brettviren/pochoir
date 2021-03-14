@@ -46,6 +46,14 @@ def gradient(array):
     return torch.tensor(g, device=array.device)
     
 
+def domain(lss):
+    '''
+    Return a domain array corresponding to the linear spaces
+    '''
+    # fixme: do something sensible for torch....
+    lss = [numpy.linspace(*ls, endpoint=False) for ls in lss]
+    return numpy.meshgrid(*lss)
+
 def dup(array):
     '''
     Return a copy of the array

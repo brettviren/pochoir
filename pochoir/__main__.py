@@ -65,6 +65,47 @@ def grad(ctx, scalar, vector):
 
 
 @cli.command()
+@click.option("-o","--output", type=str,
+              help="Name output result")
+@click.option("-l","--like", type=str, default=None,
+              help="Name an existing result to use for dimensions")
+@click.argument("axes", nargs=-1)
+@click.pass_context
+def domain(ctx, output, like, axes):
+    '''
+    Produce a domain array and store to output dataset.
+
+    Each argument describes the grid on one of the axes as three
+    numbers: L:H:N
+
+        - L is the low-edge of the lowest bin
+
+        - H is the high-edge of the highest bin
+
+        - N is the number of bins
+
+    If -l/--like is given then only L:H need be specified
+    '''
+    if like:
+        larr = ctx.obj.get(like)
+        shape = larr.shape
+    else:
+        shape = [int(one[-1]) for one in axes]
+        
+    lss = list()
+    used = list()
+    for one,size in zip(axes, shape):
+        one = [float(a) for a in one.split(":")]
+        this = (one[0], one[1], size)
+        lss.append(this)
+        used.append(':'.join([str(t) for t in this]))
+
+    dom = pochoir.arrays.domain(lss)
+    ctx.obj.put(output, dom, operation="domain", axes=' '.join(used))
+
+    
+
+@cli.command()
 @click.option("-i","--initial", type=str,
               help="Name initial value array, elements include boundary values")
 @click.option("-b","--boundary", type=str,
@@ -100,16 +141,29 @@ def fdm(ctx, initial, boundary,
     ctx.obj.put(solution, arr, result="solution", **params)
     ctx.obj.put(error, err, result="error", **params)
     
-@cli.command()
+@cli.command("plot-image")
 @click.argument("dataset")
 @click.argument("plotfile")
 @click.pass_context
-def plot(ctx, dataset, plotfile):
+def plot_image(ctx, dataset, plotfile):
     '''
-    Plot a dataset
+    Visualize a dataset as 2D image
     '''
     arr = ctx.obj.get(dataset)
     pochoir.plots.image(arr, plotfile)
+
+@cli.command("plot-quiver")
+@click.option("-d", "--domain", type=str, default=None,
+              help="Use named dataset for the domain, (def: indices)")
+@click.argument("dataset")
+@click.argument("plotfile")
+@click.pass_context
+def plot_quiver(ctx, domain, dataset, plotfile):
+    '''
+    Visualize a 2D or 3D vector field as a "quiver" plot.
+    '''
+    arr = ctx.obj.get(dataset)
+    pochoir.plots.quiver(arr, plotfile, domain=domain)
 
 
 def main():
