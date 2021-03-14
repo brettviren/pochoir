@@ -113,7 +113,12 @@ printing stencil2d-500-torch.pdf
 #+end_example
 
 Timing above is on i7-9750H CPU @ 2.60GHz, GeForce GTX 1650 Mobile /
-Max-Q.
+Max-Q.  Here are two more runs on a 3080Ti:
+
+#+begin_example
+nsteps:500 dt:0.32015228271484375s (1561.8 Hz)
+nsteps:50000 dt:21.91097593307495s (2282.0 Hz)
+#+end_example
 
 Default 50k steps gives solution:
 
