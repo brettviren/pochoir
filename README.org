@@ -1,11 +1,46 @@
-#+title: Play with finite difference
+#+title: Solve field response with FDM
 #+EXPORT_FILE_NAME: index.html
+
+* Overview
+
+This package solves for /field responses/ which model current induced in
+electrodes by electric charge drifting in an applied field.  
+
+** High level structure
+
+The overall solution is factored into a number of core sub-problems:
+
+- Laplace boundary value problems in 2D and 3D using the
+  finite-difference method (FDM) to determine the electrostatic
+  potential fields from the applied and the "weighting" electrode
+  voltages.
+- Initial value problem to determine paths of charge drift in the
+  applied potential.
+- Application of the [[https://en.wikipedia.org/wiki/Shockley%E2%80%93Ramo_theorem][Shockley-Ramo theorem]] to combine the above
+  solutions to get currents induced in electrodes.
+
+** Usage patterns
+
+A ~pochoir~ Python3 module and command line interface is provided.  An
+overall problem is solved by connecting subproblems as nodes in graph
+joined by edges passing data.  When using the CLI, these edges may be
+provided by files, with Numpy ~.npz~ and HDF5 formats supported.  If
+using the ~pochoir~ Python module, data is in the form of Numpy arrays
+or PyTorch tensors.
+
+** The name
+
+The core problems are solved in pochoir with FDM.  The core operation
+of FDM is often described as a "stencil" convolution.  The name
+/pochoir/ describes a stencil-based art style.  This package places no
+constraint on your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
 
 * Install
 
-This needs Numpy and matplotlib and can use PyTorch.
+~pochoir~ installs in the "usual Python way".  Use of ~pip~ and a Python
+virtual environment is recommended.  
 
-Set up a virtual environment eg:
+Eg:
 
 #+begin_example
 python3 -m venv venv
@@ -19,21 +54,25 @@ echo layout python3 > .envrc
 direnv allow
 #+end_example
 
-Then:
+Then install either for use:
 
 #+begin_example
-pip install matplotlib
+pip install git+https://github.com/brettviren/pochoir.git@HEAD
 #+end_example
 
-In principle, PyTorch can be installed as easily as:
+Or for development
 
 #+begin_example
-pip install torch
+git clone git@github.com:brettviren/pochoir.git
+cd pochoir
+pip install -e .
 #+end_example
 
-But, additional work may be needed to get GPU support going.
+Additional commands may be needed to allow PyTorch to use your GPU.
 
 * Usage
+
+*Note* these instructions are out of date
 
 Set up environment as above
 
