@@ -4,7 +4,8 @@
 * Overview
 
 This package solves for /field responses/ which model current induced in
-electrodes by electric charge drifting in an applied field.  
+electrodes by electric charge (eg, electrons from ionization) drifting
+due to potentials applied to the electrodes.
 
 ** High level structure
 
@@ -21,19 +22,24 @@ The overall solution is factored into a number of core sub-problems:
 
 ** Usage patterns
 
-A ~pochoir~ Python3 module and command line interface is provided.  An
-overall problem is solved by connecting subproblems as nodes in graph
-joined by edges passing data.  When using the CLI, these edges may be
-provided by files, with Numpy ~.npz~ and HDF5 formats supported.  If
-using the ~pochoir~ Python module, data is in the form of Numpy arrays
-or PyTorch tensors.
+The ~pochoir~ package provides a Python3 module and command line
+interface.  
+
+An overall problem is solved by connecting subproblems as nodes in
+graph joined by edges passing data.  When using the CLI, these edges
+may be provided by data in individual Numpy ~.npz~ files or as datasets
+in an HDF5 file.
+
+When using the ~pochoir~ Python module, data is in the form of Numpy
+arrays or PyTorch tensors and building a full solution from parts is
+left to the application.
 
 ** The name
 
-The core problems are solved in pochoir with FDM.  The core operation
-of FDM is often described as a "stencil" convolution.  The name
-/pochoir/ describes a stencil-based art style.  This package places no
-constraint on your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
+The core Laplace problems are solved in ~pochoir~ with FDM.  The core
+operation of FDM is sometimes described as a "stencil" convolution.
+The name /pochoir/ describes a stencil-based art style.  No constraint
+is intended on your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
 
 * Install
 
@@ -70,61 +76,57 @@ pip install -e .
 
 Additional commands may be needed to allow PyTorch to use your GPU.
 
+
 * Usage
 
-*Note* these instructions are out of date
-
-Set up environment as above
-
 #+begin_src shell :exports both :results output code :wrap example
-python stencil2d.py numpy 500
+pochoir
 #+end_src
 
 #+RESULTS:
 #+begin_example
-Using numpy
-500 steps
-100: maxerr:16.50219718185417 dt:1.6942028999328613
-200: maxerr:6.381780701032994 dt:3.3686211109161377
-300: maxerr:3.2621827043574285 dt:5.0668885707855225
-400: maxerr:2.3078917452478436 dt:6.760533094406128
-nsteps:500 dt:8.43262529373169s (59.3 Hz)
-saving stencil2d-500-numpy.npz
-printing stencil2d-500-numpy.pdf
+Usage: pochoir [OPTIONS] COMMAND [ARGS]...
+
+  pochoir command line interface
+
+Options:
+  -s, --store PATH         File for primary data storage (input and maybe
+                           output)
+
+  -o, --outstore PATH      File for output (primary only input)
+  -d, --device [cpu|cuda]  Set device on which to calculate
+  --help                   Show this message and exit.
+
+Commands:
+  domain       Produce a domain array and store to output dataset.
+  example      Generate a boundary and initial array example
+  fdm          Solve a Laplace boundary value problem with finite
+               difference...
+
+  grad         Calculate the gradient of a scalar field.
+  plot-image   Visualize a dataset as 2D image
+  plot-quiver  Visualize a 2D or 3D vector field as a "quiver" plot.
+  version      Print the version
 #+end_example
 
-If PyTorch is working for you:
 
-#+begin_src shell :exports both :results output code :wrap example
-python stencil2d.py torch 500
-#+end_src
+** Store
 
-#+RESULTS:
+~pochoir~ has an idea of a "data store" to hold output from one command
+to use as input to another.  The store may be an HDF5 file or a
+directory of NPZ files (equivalent to HDF5 datasets) and JSON files
+(equivalent to HDF5 metadata).
+
+The store may be given on the command line:
+
 #+begin_example
-Using torch
-500 steps
-100: maxerr:16.5023193359375 dt:0.2192213535308838
-200: maxerr:6.3817138671875 dt:0.4364333152770996
-300: maxerr:3.26220703125 dt:0.6530659198760986
-400: maxerr:2.30792236328125 dt:0.8703389167785645
-nsteps:500 dt:1.0253400802612305s (487.6 Hz)
-saving stencil2d-500-torch.npz
-printing stencil2d-500-torch.pdf
+pochoir -s /path/to/store      [command] [...]
+pochoir -s /path/to/store.hdf  [command] [...]
 #+end_example
 
-Timing above is on i7-9750H CPU @ 2.60GHz, GeForce GTX 1650 Mobile /
-Max-Q.  Here are two more runs on a 3080Ti:
+A store may also be given in an environment variable.
 
 #+begin_example
-nsteps:500 dt:0.32015228271484375s (1561.8 Hz)
-nsteps:50000 dt:21.91097593307495s (2282.0 Hz)
+export POCHOIR_STORE=/path/to/store
 #+end_example
-
-Default 50k steps gives solution:
-
-[[file:stencil2d-50000-torch-solution.png]]
-
-And an "error" (log10 absolute difference with prior step)
-
-[[file:stencil2d-50000-torch-error.png]]
 

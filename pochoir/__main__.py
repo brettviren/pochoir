@@ -135,7 +135,7 @@ def fdm(ctx, initial, boundary,
     arr, err = pochoir.fdm.solve(iarr, barr, bool_edges,
                                  precision, epoch, nepochs)
     params = dict(operation="fdm", 
-                  initial=intiial, boundary=boundary,
+                  initial=initial, boundary=boundary,
                   edges=edges, epoch=epoch, nepochs=nepochs,
                   precision=precision)
     ctx.obj.put(solution, arr, result="solution", **params)
@@ -167,7 +167,7 @@ def plot_quiver(ctx, domain, dataset, plotfile):
 
 
 def main():
-    cli(obj=None)
+    cli(obj=None, auto_envvar_prefix="POCHOIR")
 
 
 if '__main__' == __name__:
