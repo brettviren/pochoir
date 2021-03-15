@@ -75,12 +75,12 @@ def domain(ctx, output, like, axes):
     '''
     Produce a domain array and store to output dataset.
 
-    Each argument describes the grid on one of the axes as three
+    Each argument describes a regular grid on one of the axes as three
     numbers: L:H:N
 
-        - L is the low-edge of the lowest bin
+        - L center of the first grid point
 
-        - H is the high-edge of the highest bin
+        - H center of the last grid point
 
         - N is the number of bins
 

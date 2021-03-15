@@ -48,10 +48,13 @@ def gradient(array):
 
 def domain(lss):
     '''
-    Return a domain array corresponding to the linear spaces
+    Return a domain array corresponding to the linear spaces.
+
+    lss should be a sequence of linear space description tuples, each
+    (start, stop, npoints).
     '''
     # fixme: do something sensible for torch....
-    lss = [numpy.linspace(*ls, endpoint=False) for ls in lss]
+    lss = [numpy.linspace(*ls) for ls in lss]
     return numpy.meshgrid(*lss)
 
 def dup(array):
