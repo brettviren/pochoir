@@ -9,31 +9,37 @@ import numpy
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-def image(arr, fname):
+def image(arr, fname, domain):
     if len(arr.shape) != 2:
         raise ValueError("image plots take 2D arrays")
 
     arr = arrays.to_numpy(arr)
     plt.clf()
     #plt.title("initial")
-    plt.imshow(arr, interpolation='none', aspect='auto')
+    extent = None
+    if domain:
+        extent = domain.imshow_extent
+    plt.imshow(arr, interpolation='none', aspect='auto',
+               extent = extent)
     plt.colorbar()
     plt.savefig(fname)
 
-def quiver(arr, fname, domain = None):
-    arr = arrays.to_numpy(arr)
-    ndim = len(arr.shape) - 1
+def quiver(varr, fname, domain):
+    varr = [arrays.to_numpy(a) for a in varr]
+    ndim = len(varr)
     if ndim not in (2,3):
         raise ValueError("quiver plots take vector of 2D or 3D arrays")
 
-    if not domain:
-        axes = [numpy.arange(size) for size in arr.shape[1:]]
-        domain = numpy.array(numpy.meshgrid(*axes))
+    mg = domain.meshgrid
 
     if ndim == 2:               # 2D
-        plt.quiver(domain[0], domain[1],
-                   arr[0], arr[1], units='xy')
+        plt.quiver(mg[0], mg[1],
+                   varr[0], varr[1], units='xy')
     else:                       # 3D
-        plt.quiver(domain[0], domain[1], domain[2],
-                   arr[0], arr[1], arr[2], units='xy')        
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+
+        ax.quiver(mg[0], mg[1], mg[2],
+                  varr[0], varr[1], varr[2],
+                  length=domain.spacing[0], normalize=True)
     plt.savefig(fname)

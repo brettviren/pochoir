@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 '''
-pochoir arrays
+Low-level functions for arrays.  
+
+Avoid directly importing numpy or torch.
+
+By default, arrays are numpy arrays.
+
 '''
 
+# Ideally, this is only module to import these two:
 import numpy
 import torch
+
+# import limited numpy api
+ones = numpy.ones
+zeros = numpy.zeros
+linspace = numpy.linspace
+meshgrid = numpy.meshgrid
+
 
 def module(array):
     '''
@@ -15,6 +28,12 @@ def module(array):
     if isinstance(array, numpy.ndarray):
         return numpy
 
+def fromstr1(string, dtype=float):
+    '''
+    Parse string as 1d list of numbers, return array
+    '''
+    s = [dtype(s.strip()) for s in string.split(",") if s.strip()]
+    return to_numpy(s)
 
 def to_numpy(array):
     '''
@@ -44,25 +63,6 @@ def gradient(array):
     a = array.to('cpu').numpy()
     g = numpy.array(numpy.gradient(a))
     return torch.tensor(g, device=array.device)
-    
-
-def domain(lss):
-    '''
-    Return a domain array corresponding to the linear spaces.
-
-    lss should be a sequence of linear space description tuples, each
-    (start, stop, npoints).
-    '''
-    # fixme: do something sensible for torch....
-    lss = [numpy.linspace(*ls) for ls in lss]
-    return numpy.meshgrid(*lss, indexing="ij")
-
-def domain_like(arr):
-    '''
-    Return an "index" domain like the given array.
-    '''
-    lss = [numpy.arange(size) for size in arr.shape]
-    return numpy.array(numpy.meshgrid(*lss, indexing="ij"))
     
 
 def dup(array):

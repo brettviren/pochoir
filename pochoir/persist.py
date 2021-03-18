@@ -24,5 +24,5 @@ def store(filename, mode="a", fmt=None):
         return hdf.Store(filename, mode)
     if 'npz' in fmt:
         return npz.Store(filename, mode)
-    raise ValueError(f'unsupported file fromat {fmt} ')
+    raise ValueError(f'unsupported file fromat {fmt}')
     

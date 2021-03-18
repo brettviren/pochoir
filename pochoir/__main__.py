@@ -66,43 +66,58 @@ def grad(ctx, scalar, vector):
 
 
 @cli.command()
-@click.option("-o","--output", type=str,
-              help="Name output result")
-@click.option("-l","--like", type=str, default=None,
-              help="Name an existing result to use for dimensions")
-@click.argument("axes", nargs=-1)
+@click.option("-s","--shape", default=None, type=str,
+              help="The number of grid points in each dimension")
+@click.option("-o","--origin", default=None, type=str,
+              help="The spatial location of zero index grid point (def=0's)")
+@click.option("-s","--spacing", default=None, type=str,
+              help="The grid spacing as scalar or vector (def=1's)")
+@click.option("-f","--first", default=None, type=str,
+              help="The first indices for each dimension (def=0's)")
+@click.argument("name")
 @click.pass_context
-def domain(ctx, output, like, axes):
+def domain(ctx, shape, origin, spacing, first, name):
     '''
-    Produce a domain array and store to output dataset.
+    Produce a "domain" and store it to the output dataset.
 
-    Each argument describes a regular grid on one of the axes as three
-    numbers: L:H:N
+    A domain describes a finite, uniform grid in N-D space in these
+    terms:
 
-        - L center of the first grid point
+        - shape :: an N-D integer vector giving the number of grid
+          points in each dimension.
 
-        - H center of the last grid point
+        - origin :: an N-D spatial vector identifying the location of
+          the grid point with all indices zero.
 
-        - N is the number of bins
+        - spacing :: a scalar or N-D vector in same distance units as
+          used in origin and which gives a common or a per-dimension
+          spacing between neighboring grid points.
 
-    If -l/--like is given then only L:H need be specified
+        - first :: an N-D integer vector giving the first valid index
+          in each dimension (which is almost always the default, 0)
+
+    A vector is given as a comma-separated list of numbers.
+
+    Note: this description corresponds to vtk/paraview uniform
+    rectilinear grid, aka an "image".
     '''
-    if like:
-        larr = ctx.obj.get(like)
-        shape = larr.shape
+    shape = pochoir.arrays.fromstr1(shape, int)
+    nd = shape.ndim
+    if origin:
+        origin = pochoir.arrays.fromstr1(origin)
     else:
-        shape = [int(one[-1]) for one in axes]
-        
-    lss = list()
-    used = list()
-    for one,size in zip(axes, shape):
-        one = [float(a) for a in one.split(":")]
-        this = (one[0], one[1], size)
-        lss.append(this)
-        used.append(':'.join([str(t) for t in this]))
+        origin = pochoir.arrays.zeros(shape)
+    if spacing:
+        spacing = pochoir.arrays.fromstr1(spacing)
+    else:
+        spacing = pochoir.arrays.ones(shape)
+    if first:
+        first = pochoir.arrays.fromstr1(first, int)
+    else:
+        first = pochoir.arrays.zeros(shape, dtype=int)
 
-    dom = pochoir.arrays.domain(lss)
-    ctx.obj.put(output, dom, operation="domain", axes=' '.join(used))
+    dom = pochoir.domain.Domain(shape, spacing, origin, first)
+    ctx.obj.put_domain(name, dom)
 
     
 
@@ -134,7 +149,7 @@ def fdm(ctx, initial, boundary,
     barr = ctx.obj.get(boundary)
     bool_edges = [e.startswith("per") for e in edges.split(",")]
     if len(bool_edges) != iarr.ndim:
-        raise ValueError("the number of periodic condition do not match domain dimensions")
+        raise ValueError("the number of periodic condition do not match problem dimensions")
     arr, err = pochoir.fdm.solve(iarr, barr, bool_edges,
                                  precision, epoch, nepochs)
     params = dict(operation="fdm", 
@@ -145,15 +160,19 @@ def fdm(ctx, initial, boundary,
     ctx.obj.put(error, err, result="error", **params)
     
 @cli.command("plot-image")
+@click.option("-d","--domain", default=None, type=str,
+              help="Use domain for the plot")
 @click.argument("dataset")
 @click.argument("plotfile")
 @click.pass_context
-def plot_image(ctx, dataset, plotfile):
+def plot_image(ctx, domain, dataset, plotfile):
     '''
     Visualize a dataset as 2D image
     '''
     arr = ctx.obj.get(dataset)
-    pochoir.plots.image(arr, plotfile)
+    if domain:
+        domain = ctx.obj.get_domain(domain):
+    pochoir.plots.image(arr, plotfile, domain)
 
 @cli.command("plot-quiver")
 @click.option("-d", "--domain", type=str, default=None,
