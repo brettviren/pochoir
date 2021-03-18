@@ -98,15 +98,14 @@ Options:
   --help                   Show this message and exit.
 
 Commands:
-  domain       Produce a domain array and store to output dataset.
-  example      Generate a boundary and initial array example
-  fdm          Solve a Laplace boundary value problem with finite
-               difference...
-
-  grad         Calculate the gradient of a scalar field.
-  plot-image   Visualize a dataset as 2D image
-  plot-quiver  Visualize a 2D or 3D vector field as a "quiver" plot.
-  version      Print the version
+  domain            Produce a domain array and store to output dataset.
+  example           Generate a boundary and initial array example
+  export-vtk-image  Export a dataset to a vtk file of same name
+  fdm               Solve a Laplace boundary value problem with finite...
+  grad              Calculate the gradient of a scalar field.
+  plot-image        Visualize a dataset as 2D image
+  plot-quiver       Visualize a 2D or 3D vector field as a "quiver" plot.
+  version           Print the version
 #+end_example
 
 

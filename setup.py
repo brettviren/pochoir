@@ -21,6 +21,7 @@ setuptools.setup(
         "torch",         # for CPU/GPU
         "desolver",      # candidate for rk, needs post-inst hack/fix 
         "torchdiffeq",   # candidate for rk
+        "pyevtk",        # for optional export to VTK
         "pytest",
     ],
     entry_points = dict(

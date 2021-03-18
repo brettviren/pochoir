@@ -9,6 +9,7 @@ import pochoir
 
 @click.group()
 @click.option("-s","--store",type=click.Path(),
+              envvar="POCHOIR_STORE",
               help="File for primary data storage (input and maybe output)")
 @click.option("-o","--outstore",type=click.Path(),
               help="File for output (primary only input)")
@@ -36,7 +37,7 @@ def version():
 @click.pass_context
 def example(ctx, name):
     '''
-    Generate a boundary and initial array example
+    Generate a boundary and initial array example (try "list")
     '''
     if name == "list":
         for one in dir(pochoir.examples):
@@ -181,7 +182,7 @@ def export_vtk(ctx, name):
 
 
 def main():
-    cli(obj=None, auto_envvar_prefix="POCHOIR")
+    cli(obj=None)
 
 
 if '__main__' == __name__:
