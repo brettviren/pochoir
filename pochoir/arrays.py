@@ -55,7 +55,15 @@ def domain(lss):
     '''
     # fixme: do something sensible for torch....
     lss = [numpy.linspace(*ls) for ls in lss]
-    return numpy.meshgrid(*lss)
+    return numpy.meshgrid(*lss, indexing="ij")
+
+def domain_like(arr):
+    '''
+    Return an "index" domain like the given array.
+    '''
+    lss = [numpy.arange(size) for size in arr.shape]
+    return numpy.array(numpy.meshgrid(*lss, indexing="ij"))
+    
 
 def dup(array):
     '''

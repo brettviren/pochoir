@@ -132,6 +132,8 @@ def fdm(ctx, initial, boundary,
     iarr = ctx.obj.get(initial)
     barr = ctx.obj.get(boundary)
     bool_edges = [e.startswith("per") for e in edges.split(",")]
+    if len(bool_edges) != iarr.ndim:
+        raise ValueError("the number of periodic condition do not match domain dimensions")
     arr, err = pochoir.fdm.solve(iarr, barr, bool_edges,
                                  precision, epoch, nepochs)
     params = dict(operation="fdm", 
@@ -164,6 +166,18 @@ def plot_quiver(ctx, domain, dataset, plotfile):
     '''
     arr = ctx.obj.get(dataset)
     pochoir.plots.quiver(arr, plotfile, domain=domain)
+
+
+@cli.command("export-vtk-image")
+@click.argument("name")
+@click.pass_context
+def export_vtk(ctx, name):
+    '''
+    Export a dataset to a vtk file of same name
+    '''
+    arr = ctx.obj.get(name)
+    scalars = {name: arr}
+    pochoir.vtkexport.image3d(name, **scalars)
 
 
 def main():

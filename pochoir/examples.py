@@ -1,5 +1,62 @@
 import numpy
 
+def ex_sandh():
+    '''
+    A strip+hole 3D example
+    '''
+    # units are mm
+    sep = 0.05
+    strip_width = 5
+    strip_length = 2
+    rad = 1
+
+    cat_pos = 100
+    strip_pos = 30              # strip center
+    strip_thick = 0.3
+    elec_thick = 0.1
+    ind_pos = strip_pos + 0.5*(strip_thick+elec_thick)
+    col_pos = strip_pos - 0.5*(strip_thick+elec_thick)
+    gnd_pos = 0
+
+    
+    # 500 v/cm
+    cat_pot = 50 * (cat_pos - gnd_pos)
+    # this is bogus:
+    ind_pot = 50 * (ind_pos - gnd_pos) + 100
+    col_pot = 50 * (col_pos - gnd_pos) - 100
+
+    # [101, 41, 2001]
+    shape = [1+int(strip_width/sep),
+             1+int(strip_length/sep),
+             1+int((cat_pos-gnd_pos)/sep)]
+    arr = numpy.ones(shape)     # use 1.0 as non-boundary value
+
+    def xi(x):
+        return int((x+0.5*strip_width)/sep)
+    def yi(y):
+        return int((y+0.5*strip_length)/sep)
+    def zi(z):
+        return int(z/sep)
+
+    arr[:,:,zi(cat_pos)] = cat_pot
+    arr[:,:,zi(ind_pos)] = ind_pot
+    arr[:,:,zi(col_pos)] = col_pot
+    arr[:,:,zi(gnd_pos)] = 0.0
+    
+    # square holes for now
+    arr[xi(-0.5*strip_width) :xi(-0.5*strip_width+rad),
+        yi(-0.5*strip_length):yi(-0.5*strip_length+rad),
+        zi(ind_pos):zi(col_pos)] = 1.0
+    arr[xi(+0.5*strip_width) :xi(+0.5*strip_width+rad),
+        yi(+0.5*strip_length):yi(+0.5*strip_length+rad),
+        zi(ind_pos):zi(col_pos)] = 1.0
+
+    barr = numpy.ones(shape)
+    barr[arr == 1.0] = 0
+
+    return arr,barr
+
+
 def ex_caps():
     '''
     Kind of a spiral of capacitors
