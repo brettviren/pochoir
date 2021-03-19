@@ -31,11 +31,14 @@ class Store:
         return self.basedir.joinpath(key + self.dsext)
 
     def get(self, key, metadata=False):
+        '''
+        Get dataset and maybe metadata with key relative to store.
+        '''
         dp = self.dspath(key)
         if not dp.exists():
-            raise KeyError(f'no data set at {dp.resolve()}')
+            raise KeyError(f'no dataset for key {key}, tried {dp.resolve()}')
         arrs = numpy.load(dp.resolve())
-        arr = arrs[key]
+        arr = arrs[dp.stem]
         if metadata:
             mdpath = dp.parent.joinpath(dp.stem + self.mdext)
             md = dict()

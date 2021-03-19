@@ -6,6 +6,10 @@ from pochoir.plots import quiver
 def test_domain_3d():
     d = Domain(numpy.array([20,10,100]), numpy.array([0.1, 0.1, 0.1]))
     assert (d.shape == (20,10,100)).all()
+    assert (d.shape.size == 3)
+    assert (d.spacing.size == 3)
+    assert (d.first.size == 3)
+    assert (d.origin.size == 3)
     lss = d.linspaces
     for ls,size in zip(lss, d.shape):
         assert(len(ls) == size)

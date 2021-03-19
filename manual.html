@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-03-19 Fri 15:35 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pochoir user manual</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Brett Viren" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="https://brettviren.github.io/moo/other/readtheorg/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://brettviren.github.io/moo/other/readtheorg/css/readtheorg.css"/>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/jquery.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/readtheorg/js/readtheorg.js"></script>
+<style> #content{max-width:1800px;}</style>
+<style> p{max-width:800px;}</style>
+<style> li{max-width:800px;}</style>
+<style> pre.src{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<style> pre.example{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<style> code{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<script type="text/javascript">
+// @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
+<!--/*--><![CDATA[/*><!--*/
+     function CodeHighlightOn(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.add("code-highlighted");
+         target.classList.add("code-highlighted");
+       }
+     }
+     function CodeHighlightOff(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.remove("code-highlighted");
+         target.classList.remove("code-highlighted");
+       }
+     }
+    /*]]>*///-->
+// @license-end
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">pochoir user manual</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orgf1e1bc7">Introduction</a>
+<ul>
+<li><a href="#orgced7ad1">Overview of calculating response functions</a></li>
+<li><a href="#org9765ae2">FDM for Laplace boundary value problem</a></li>
+<li><a href="#org1eace20">RK4/5 for paths initial value problem</a></li>
+</ul>
+</li>
+<li><a href="#orgd5e6fab">Getting started</a>
+<ul>
+<li><a href="#org0cd9beb">Installation</a></li>
+<li><a href="#orgf7e744e">General usage</a></li>
+<li><a href="#org081256a">Using CPU vs GPU</a></li>
+<li><a href="#org4d2d806">Data and its storage</a></li>
+</ul>
+</li>
+<li><a href="#orga9044d4">Tutorial</a>
+<ul>
+<li><a href="#orgb94f25c">Define the problem domain</a></li>
+<li><a href="#org81a6911">Define initial and boundary value arrays</a></li>
+<li><a href="#orgd00c747">Solve Laplace equation</a></li>
+<li><a href="#orge9c1c5b">Calculate and visualize gradient fields</a></li>
+<li><a href="#orgb436c02">Path initial value problem</a></li>
+<li><a href="#org1cfab03">Calculate responses</a></li>
+<li><a href="#org7a64c19">Convert to Wire-Cell</a></li>
+<li><a href="#orge08789f">Automation with Snakemake</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgf1e1bc7" class="outline-2">
+<h2 id="orgf1e1bc7">Introduction</h2>
+<div class="outline-text-2" id="text-orgf1e1bc7">
+<p>
+This describes how to use <code>pochoir</code>.
+</p>
+
+<p>
+Following sections:
+</p>
+
+<ul class="org-ul">
+<li>getting started</li>
+<li>usage tutorial</li>
+<li>developer guide</li>
+</ul>
+
+<p>
+Remaining subsections describe <code>pochoir</code> concepts
+</p>
+</div>
+
+<div id="outline-container-orgced7ad1" class="outline-3">
+<h3 id="orgced7ad1">Overview of calculating response functions</h3>
+<div class="outline-text-3" id="text-orgced7ad1">
+<ul class="org-ul">
+<li>describe the steps and data products</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org9765ae2" class="outline-3">
+<h3 id="org9765ae2">FDM for Laplace boundary value problem</h3>
+<div class="outline-text-3" id="text-org9765ae2">
+<ul class="org-ul">
+<li>characteristics of problem where FDM is applicable (grid vs geometry feature sizes)</li>
+<li>define terms
+<ul class="org-ul">
+<li>domain</li>
+<li>boundary value problem
+<ul class="org-ul">
+<li>boundary and initial values and boundary condition</li>
+</ul></li>
+<li>initial value problem
+<ul class="org-ul">
+<li>paths</li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org1eace20" class="outline-3">
+<h3 id="org1eace20">RK4/5 for paths initial value problem</h3>
+</div>
+</div>
+
+
+<div id="outline-container-orgd5e6fab" class="outline-2">
+<h2 id="orgd5e6fab">Getting started</h2>
+<div class="outline-text-2" id="text-orgd5e6fab">
+</div>
+<div id="outline-container-org0cd9beb" class="outline-3">
+<h3 id="org0cd9beb">Installation</h3>
+<div class="outline-text-3" id="text-org0cd9beb">
+<ul class="org-ul">
+<li>get package</li>
+<li>venv options (<code>python -m venv venv ; source venv/bin/activate</code> and <code>echo layout python3 &gt; .envrc; direnv allow</code>)</li>
+<li>install (<code>pip install -e .</code> or <code>pip install git@github.com:wirecell/pochoir.git</code> or whatever)</li>
+<li>testing (<code>pytest</code>)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgf7e744e" class="outline-3">
+<h3 id="orgf7e744e">General usage</h3>
+<div class="outline-text-3" id="text-orgf7e744e">
+<ul class="org-ul">
+<li>CLI help</li>
+<li>general CLI vs command-level options</li>
+<li>environment variables (<code>POCHOIR_STORE</code>)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org081256a" class="outline-3">
+<h3 id="org081256a">Using CPU vs GPU</h3>
+<div class="outline-text-3" id="text-org081256a">
+<ul class="org-ul">
+<li>devices: "best" vs "numpy" vs torch "cpu" and "gpu" (still needs actual implementation to pick "best" or otherwise globally set)</li>
+<li>selection via CLI options</li>
+<li>when to care what device is used</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org4d2d806" class="outline-3">
+<h3 id="org4d2d806">Data and its storage</h3>
+<div class="outline-text-3" id="text-org4d2d806">
+<ul class="org-ul">
+<li>main data objects
+<ul class="org-ul">
+<li>domain</li>
+<li>scalar fields</li>
+<li>vector fields</li>
+<li>path start points</li>
+<li>full paths</li>
+<li>responses</li>
+</ul></li>
+
+<li>separate input and output vs input+output store</li>
+
+<li>HDF5 vs NPZ+JSON+directory   
+<ul class="org-ul">
+<li>latter can work with snakemake or similar</li>
+<li>converting between the two</li>
+</ul></li>
+
+<li>export formats
+<ul class="org-ul">
+<li>vtk</li>
+</ul></li>
+
+<li>input formats
+<ul class="org-ul">
+<li>invent something for electrode shape description, probably JSON based
+<ul class="org-ul">
+<li>maybe jsonnet</li>
+</ul></li>
+<li>do we allow import of data object from, say, external NPZ?</li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga9044d4" class="outline-2">
+<h2 id="orga9044d4">Tutorial</h2>
+<div class="outline-text-2" id="text-orga9044d4">
+<p>
+This tutorial walks through the individual steps of calculating field
+responses for a 2D problem and ends with an example of how to automate
+the entire workflow.
+</p>
+</div>
+
+<div id="outline-container-orgb94f25c" class="outline-3">
+<h3 id="orgb94f25c">Define the problem domain</h3>
+<div class="outline-text-3" id="text-orgb94f25c">
+<p>
+A <i>domain</i> of a problem is the space on which it is defined.  A <code>pochoir</code>
+domain is a <i>finite, uniform, rectilinear</i> (Cartesian) grid of points.
+In general, the grid may be N-dimensional though practical problems
+will require either 2D or 3D (or possibly a mix of both).
+</p>
+
+<p>
+A domain can be created simply with the <code>pochoir domain</code> command:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir domain --help
+</pre>
+</div>
+
+<pre class="example" id="orga921357">
+Usage: pochoir domain [OPTIONS] NAME
+
+  Produce a "domain" and store it to the output dataset.
+
+  A domain describes a finite, uniform grid in N-D space in these terms:
+
+      - shape :: an N-D integer vector giving the number of grid
+      points in each dimension.  Required.
+
+      - origin :: an N-D spatial vector identifying the location of
+      the grid point with all indices zero.
+
+      - spacing :: a scalar or N-D vector in same distance units as
+      used in origin and which gives a common or a per-dimension
+      spacing between neighboring grid points.
+
+      - first :: an N-D integer vector giving the first valid index       in
+      each dimension (which is almost always the default, 0)
+
+  A vector is given as a comma-separated list of numbers.
+
+  Note: this description corresponds to vtk/paraview uniform rectilinear
+  grid, aka an "image".
+
+Options:
+  -s, --shape TEXT    The number of grid points in each dimension
+  -o, --origin TEXT   The spatial location of zero index grid point (def=0's)
+  -s, --spacing TEXT  The grid spacing as scalar or vector (def=1's)
+  -f, --first TEXT    The first indices for each dimension (def=0's)
+  --help              Show this message and exit.
+</pre>
+
+<p>
+As shown in the help, each of the four vectors can be given on the
+command line but only <code>shape</code> is required if the defaults are
+sufficient.  The size of the <code>shape</code> vector sets the dimension of the
+domain.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir domain --shape 100,100 --spacing 0.1 adomain
+ls -l store/adomain/
+</pre>
+</div>
+
+<pre class="example" id="org866e4a5">
+total 16
+-rw-rw-r-- 1 bv bv 280 Mar 19 15:35 first.npz
+-rw-rw-r-- 1 bv bv 282 Mar 19 15:35 origin.npz
+-rw-rw-r-- 1 bv bv 280 Mar 19 15:35 shape.npz
+-rw-rw-r-- 1 bv bv 284 Mar 19 15:35 spacing.npz
+</pre>
+
+<div class="note" id="orgc95f524">
+<p>
+This listing assumes the NPZ based store is used.  If using an HDF5 store,
+these four arrays are stored as datasets in an HDF5 group named
+<code>adomain</code>.
+</p>
+
+</div>
+
+<p>
+Once defined, a domain is referenced by the given name (<code>adomain</code> here).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org81a6911" class="outline-3">
+<h3 id="org81a6911">Define initial and boundary value arrays</h3>
+<div class="outline-text-3" id="text-org81a6911">
+<p>
+An <i>initial value</i> array provides a scalar field from which the FDM
+solution begins.  Each element holds either a known, applied potential
+or an initial guess.  The <i>boundary value</i> array elements take a value
+of 1 or 0.  Unity indicates the corresponding element in the initial
+value array should be considered a fixed applied potential and all
+others are free to be adjusted by the FDM.
+</p>
+</div>
+
+<div id="outline-container-orgab831cf" class="outline-4">
+<h4 id="orgab831cf">Example initial and boundary value arrays</h4>
+<div class="outline-text-4" id="text-orgab831cf">
+<p>
+A number of hard-wired examples are provided as examples:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir example --help
+pochoir example list
+pochoir example caps
+</pre>
+</div>
+
+<pre class="example" id="org4413fe4">
+Usage: pochoir example [OPTIONS] NAME
+
+  Generate a boundary and initial array example (try "list")
+
+Options:
+  --help  Show this message and exit.
+caps
+sandh
+</pre>
+
+<p>
+Here, the <code>caps</code> example is created.  It represents a fictional set of
+parallel plate capacitors.  The example populates arrays named
+<code>caps-initial</code> and <code>caps-boundary</code> and they may be visualized:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir plot-image caps-boundary docs/caps-boundary.png
+pochoir plot-image caps-initial docs/caps-initial.png
+</pre>
+</div>
+
+
+
+
+<div id="org41c2913" class="figure">
+<p><img src="docs/caps-boundary.png" alt="caps-boundary.png" />
+</p>
+</div>
+
+
+<div id="orga6a6e49" class="figure">
+<p><img src="docs/caps-initial.png" alt="caps-initial.png" />
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgf9919dc" class="outline-4">
+<h4 id="orgf9919dc">Custom electrode description</h4>
+<div class="outline-text-4" id="text-orgf9919dc">
+<p>
+For arbitrary problems, the user may provide a description of the
+electrodes and their applied potentials and <code>pochoir</code> will render them
+to the domain grid.
+</p>
+
+<div class="caution" id="org911910a">
+<p>
+This is work still to be provided.
+</p>
+
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgd00c747" class="outline-3">
+<h3 id="orgd00c747">Solve Laplace equation</h3>
+<div class="outline-text-3" id="text-orgd00c747">
+<p>
+The Laplace equation can be solved by specifying <i>initial</i> and <i>boundary</i>
+value arrays, boundary conditions and convergence requirements.  
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir fdm --help
+</pre>
+</div>
+
+<pre class="example" id="org969d3e7">
+Usage: pochoir fdm [OPTIONS] SOLUTION ERROR
+
+  Solve a Laplace boundary value problem with finite difference method
+  storing the result as named solution.  The error names an output array to
+  hold difference in last two iterations.
+
+Options:
+  -i, --initial TEXT     Name initial value array, elements include boundary
+                         values
+
+  -b, --boundary TEXT    Name the boundary array, zero value elemnts subject
+                         to solving
+
+  -e, --edges TEXT       Comma separated list of 'fixed' or 'periodic' giving
+                         domain edge conditions
+
+  --precision FLOAT      Finish when no changes larger than precision
+  --epoch INTEGER        Number of iterations before any check
+  -n, --nepochs INTEGER  Limit number of epochs (def: one epoch)
+  --help                 Show this message and exit.
+</pre>
+
+<p>
+We may make a trial solution which we save it and its error to <code>caps-solution1</code> and <code>caps-error1</code> arrays, respectively
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir fdm -e periodic,periodic \
+        -i caps-initial -b caps-boundary \
+        --epoch 10 -n 1 \
+        caps-solution1 caps-error1  
+</pre>
+</div>
+
+<pre class="example" id="org5addb1f">
+maxerr: 43.046966552734375
+</pre>
+
+<p>
+The maximum difference between the solution at the penultimate and
+last iteration is the printed <code>maxerr</code>.
+</p>
+
+<p>
+We can visualize solution and error:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir plot-image caps-solution1 docs/caps-solution1.png
+pochoir plot-image caps-error1 docs/caps-error1.png
+</pre>
+</div>
+
+
+<div id="orga35f886" class="figure">
+<p><img src="docs/caps-solution1.png" alt="caps-solution1.png" /> 
+</p>
+</div>
+
+
+<div id="orga3471b6" class="figure">
+<p><img src="docs/caps-error1.png" alt="caps-error1.png" />
+</p>
+</div>
+
+
+<p>
+The error is rather high and although this domain is small which makes
+the solution fast, we may reuse this first solution as the <i>initial
+value</i> array for continued solution:
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir fdm -e periodic,periodic \
+        -i caps-solution1 -b caps-boundary \
+        --epoch 10 -n 1 \
+        caps-solution2 caps-error2  
+</pre>
+</div>
+
+<pre class="example" id="orgc4864bb">
+maxerr: 21.263214111328125
+</pre>
+
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir plot-image caps-solution2 docs/caps-solution2.png
+pochoir plot-image caps-error2 docs/caps-error2.png
+</pre>
+</div>
+
+
+<div id="org49e157a" class="figure">
+<p><img src="docs/caps-solution2.png" alt="caps-solution2.png" /> 
+</p>
+</div>
+
+
+<div id="org05bf33d" class="figure">
+<p><img src="docs/caps-error2.png" alt="caps-error2.png" />
+</p>
+</div>
+
+
+<p>
+We can continue this manual, high-level iteration or take a guess for
+the total number of internal iterations to reach the desired error
+level.  Or, we may tell <code>pochoir fdm</code> to continue until either the
+requested number of epochs are reached or the <code>maxerr</code> falls below a
+requested precision.  When using a precision, it is checked only after
+each epoch is complete and so the result will typically be
+over-precise.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir fdm -e periodic,periodic \
+        -i caps-solution2 -b caps-boundary \
+        --epoch 10 -n 100 --precision 0.1 \
+        caps-solution3 caps-error3  
+</pre>
+</div>
+
+<pre class="example" id="org8f29fa2">
+maxerr: 13.02484130859375
+maxerr: 8.48162841796875
+maxerr: 5.6507568359375
+maxerr: 3.921722412109375
+maxerr: 2.8282470703125
+maxerr: 2.056884765625
+maxerr: 1.50787353515625
+maxerr: 1.12823486328125
+maxerr: 0.855926513671875
+maxerr: 0.65093994140625
+maxerr: 0.496307373046875
+maxerr: 0.37939453125
+maxerr: 0.2906494140625
+maxerr: 0.2232666015625
+maxerr: 0.17201995849609375
+maxerr: 0.13336181640625
+maxerr: 0.10352325439453125
+maxerr: 0.08056640625
+</pre>
+
+<p>
+The solution is reached prior to 100 epochs.  Again, let's see it:
+</p>
+
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir plot-image caps-solution3 docs/caps-solution3.png
+pochoir plot-image caps-error3 docs/caps-error3.png
+</pre>
+</div>
+
+
+<div id="org93554cd" class="figure">
+<p><img src="docs/caps-solution3.png" alt="caps-solution3.png" /> 
+</p>
+</div>
+
+
+<div id="orgc5af1ce" class="figure">
+<p><img src="docs/caps-error3.png" alt="caps-error3.png" />
+</p>
+</div>
+</div>
+
+<div id="outline-container-org70a1c4e" class="outline-4">
+<h4 id="org70a1c4e">3D Laplace</h4>
+<div class="outline-text-4" id="text-org70a1c4e">
+<ul class="org-ul">
+<li>change in args w.r.t. 2D</li>
+<li>understand time/resource scaling with 2D</li>
+<li>visualize (matplotlib and paraview)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgb14950a" class="outline-4">
+<h4 id="orgb14950a">Use 2D as boundary condition for 3D</h4>
+<div class="outline-text-4" id="text-orgb14950a">
+<ul class="org-ul">
+<li>derive 3D boundary values to 2D and merge with 3D boundary values</li>
+<li>understand precision of 2D as a function of 3D domain size</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org89d4b9d" class="outline-4">
+<h4 id="org89d4b9d">Weighting fields</h4>
+<div class="outline-text-4" id="text-org89d4b9d">
+<p>
+The fantasy example of <code>caps</code> sets boundary values applicable for
+calculating the "real", applied potential.  The overall field response
+is tabulated for each <i>sensitive electrode</i> by calculating that
+electrode's <i>weighting potential</i>.  Thus we must apply the <code>pochoir fdm</code>
+command as above to a <i>boundary value</i> which sets the grid points on the
+sensitive electrode to unity and all others to zero.
+</p>
+
+<div class="warning" id="org916cbb0">
+<p>
+FIXME: How best to specify this and manage the results is a WIP.
+</p>
+
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orge9c1c5b" class="outline-3">
+<h3 id="orge9c1c5b">Calculate and visualize gradient fields</h3>
+<div class="outline-text-3" id="text-orge9c1c5b">
+<p>
+The <i>gradient</i> of a scalar field gives a vector field.  The E-field is
+the gradient of the applied potential scalar field and is needed for
+the next step of calculating paths.  The W-fields, one per sensitive
+electrode are needed for the step after, calculating responses to
+paths.
+</p>
+
+<p>
+The <code>pochoir grad</code> command will calculate and store the gradient
+allowing for visualization and later use.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir grad --help
+</pre>
+</div>
+
+<pre class="example" id="org6a6436f">
+Usage: pochoir grad [OPTIONS] SCALAR VECTOR
+
+  Calculate the gradient of a scalar field.
+
+Options:
+  -d, --domain TEXT  Use named dataset for the domain, (def: indices)
+  --help             Show this message and exit.
+</pre>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir grad \
+        --domain adomain \
+        caps-solution3 caps-efield3
+</pre>
+</div>
+
+<p>
+We may visualize this field with:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">pochoir plot-quiver \
+        --domain adomain \
+        caps-efield3 docs/caps-efield3.png
+</pre>
+</div>
+
+
+<div id="org5a3f5c7" class="figure">
+<p><img src="docs/caps-efield3.png" alt="caps-efield3.png" /> 
+</p>
+</div>
+
+
+<ul class="org-ul">
+<li>2D and 3D matplotlib</li>
+<li>paraview</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orgb436c02" class="outline-3">
+<h3 id="orgb436c02">Path initial value problem</h3>
+<div class="outline-text-3" id="text-orgb436c02">
+<ul class="org-ul">
+<li>specify problem to solve</li>
+<li>specify initial value</li>
+<li>apply solver</li>
+<li>store result</li>
+<li>visualize (matplotlib and paraview)</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org1cfab03" class="outline-3">
+<h3 id="org1cfab03">Calculate responses</h3>
+<div class="outline-text-3" id="text-org1cfab03">
+<ul class="org-ul">
+<li>combine path and fields for schockley-ramo</li>
+<li>exploit symmetry and equivalences</li>
+<li>visualize</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org7a64c19" class="outline-3">
+<h3 id="org7a64c19">Convert to Wire-Cell</h3>
+</div>
+
+<div id="outline-container-orge08789f" class="outline-3">
+<h3 id="orge08789f">Automation with Snakemake</h3>
+<div class="outline-text-3" id="text-orge08789f">
+<ul class="org-ul">
+<li>full chain, repeatable, performant processing</li>
+<li>what knobs to tune</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Brett Viren</p>
+<p class="date">Created: 2021-03-19 Fri 15:35</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

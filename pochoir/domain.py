@@ -4,7 +4,7 @@ The pochoir problem domain.
 
 A domain is an N-d finite grid aligned with Cartesian coordinate axes.  
 '''
-from .arrays import fromstr1, ones, zeros, linspace, meshgrid
+from .arrays import fromstr1, ones, zeros, linspace, meshgrid, gradient
 
 class Domain:
     def __init__(self, shape, spacing, origin=None, first=None):
@@ -14,11 +14,11 @@ class Domain:
         self.shape = shape
         self.spacing = spacing
         if origin is None:
-            self.origin = zeros(shape.size, dtype=float)
+            self.origin = zeros(shape.shape, dtype=float)
         else:
             self.origin = origin
         if first is None:
-            self.first = zeros(shape.size, dtype=int)
+            self.first = zeros(shape.shape, dtype=int)
         else:
             self.first = first
 
@@ -62,4 +62,8 @@ class Domain:
         return meshgrid(*self.linspaces, indexing="ij")
 
     
-        
+    def gradient(self, scalar):
+        '''
+        Return the finite difference gradient of the scalar field.
+        '''
+        return gradient(scalar, self.spacing)
