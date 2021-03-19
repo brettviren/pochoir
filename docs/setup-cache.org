@@ -1,0 +1,22 @@
+
+Evaluate this to globally turn on caching of org babel blocks.  Do not
+do this when making a release.
+
+#+begin_src emacs-lisp 
+  (setq org-babel-default-header-args
+        (cons '(:cache . "yes")
+              (assq-delete-all :cache org-babel-default-header-args)))
+#+end_src
+
+#+RESULTS[00ea521edc0d8f4ab5b70980b853bd814e6c5ad8]:
+: ((:cache . yes) (:session . none) (:results . replace) (:exports . code) (:noweb . no) (:hlines . no) (:tangle . no))
+
+
+
+To turn off caching.  Do this while making a release!
+
+#+begin_src emacs-lisp 
+  (setq org-babel-default-header-args
+        (cons '(:cache . "no")
+              (assq-delete-all :cache org-babel-default-header-args)))
+#+end_src

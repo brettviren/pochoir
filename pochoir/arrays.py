@@ -67,7 +67,8 @@ def gradient(array, spacing = None):
     a = array.to('cpu').numpy()
     gvec = numpy.gradient(a)
     if spacing is not None:
-        gvec = [v/s for v,s in zip(gvec, spacing)]
+        print(spacing)
+        gvec = [numpy.array(v/s) for v,s in zip(gvec, spacing)]
     g = numpy.array(gvec)
     return torch.tensor(g, device=array.device)
     

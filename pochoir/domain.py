@@ -14,11 +14,11 @@ class Domain:
         self.shape = shape
         self.spacing = spacing
         if origin is None:
-            self.origin = zeros(shape.size, dtype=float)
+            self.origin = zeros(shape.shape, dtype=float)
         else:
             self.origin = origin
         if first is None:
-            self.first = zeros(shape.size, dtype=int)
+            self.first = zeros(shape.shape, dtype=int)
         else:
             self.first = first
 

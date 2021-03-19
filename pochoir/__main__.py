@@ -53,15 +53,22 @@ def example(ctx, name):
     
 
 @cli.command()
+@click.option("-d", "--domain", type=str, default=None,
+              help="Use named dataset for the domain, (def: indices)")
 @click.argument("scalar")
 @click.argument("vector")
 @click.pass_context
-def grad(ctx, scalar, vector):
+def grad(ctx, domain, scalar, vector):
     '''
     Calculate the gradient of a scalar field.
     '''
     pot = ctx.obj.get(scalar)
-    field = pochoir.arrays.gradient(pot)
+    if domain:
+        domain = ctx.obj.get_domain(domain)
+        spacing = domain.spacing
+    else:
+        spacing = None
+    field = pochoir.arrays.gradient(pot, spacing=spacing)
     ctx.obj.put(vector, field, scalar=scalar, operation="grad")
 
 
@@ -84,7 +91,7 @@ def domain(ctx, shape, origin, spacing, first, name):
     terms:
 
         - shape :: an N-D integer vector giving the number of grid
-          points in each dimension.
+          points in each dimension.  Required.
 
         - origin :: an N-D spatial vector identifying the location of
           the grid point with all indices zero.
@@ -102,19 +109,25 @@ def domain(ctx, shape, origin, spacing, first, name):
     rectilinear grid, aka an "image".
     '''
     shape = pochoir.arrays.fromstr1(shape, int)
-    nd = shape.ndim
+    ndim = shape.size
+
+    if spacing:
+        if "," in spacing:
+            spacing = pochoir.arrays.fromstr1(spacing)
+        else:
+            spacing = pochoir.arrays.zeros(ndim) + float(spacing)
+    else:
+        spacing = pochoir.arrays.ones(ndim)
+
     if origin:
         origin = pochoir.arrays.fromstr1(origin)
     else:
-        origin = pochoir.arrays.zeros(shape)
-    if spacing:
-        spacing = pochoir.arrays.fromstr1(spacing)
-    else:
-        spacing = pochoir.arrays.ones(shape)
+        origin = pochoir.arrays.zeros(ndim)
+
     if first:
         first = pochoir.arrays.fromstr1(first, int)
     else:
-        first = pochoir.arrays.zeros(shape, dtype=int)
+        first = pochoir.arrays.zeros(ndim, dtype=int)
 
     dom = pochoir.domain.Domain(shape, spacing, origin, first)
     ctx.obj.put_domain(name, dom)
@@ -132,7 +145,7 @@ def domain(ctx, shape, origin, spacing, first, name):
               help="Finish when no changes larger than precision")
 @click.option("--epoch", type=int, default=1000,
               help="Number of iterations before any check")
-@click.option("-n", "--nepochs", type=int, default=1.0,
+@click.option("-n", "--nepochs", type=int, default=1,
               help="Limit number of epochs (def: one epoch)")
 @click.argument("solution")
 @click.argument("error")
@@ -185,7 +198,8 @@ def plot_quiver(ctx, domain, dataset, plotfile):
     Visualize a 2D or 3D vector field as a "quiver" plot.
     '''
     arr = ctx.obj.get(dataset)
-    pochoir.plots.quiver(arr, plotfile, domain=domain)
+    dom = ctx.obj.get_domain(domain)
+    pochoir.plots.quiver(arr, plotfile, domain=dom)
 
 
 @cli.command("export-vtk-image")

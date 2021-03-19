@@ -52,10 +52,11 @@ class Main:
         Key should be for a group of datasets or directory of files
         describing a domain.
         '''
-        return Domain(self.get(key + "/shape"),
-                      self.get(key + "/origin"),
-                      self.get(key + "/spacing"),
-                      self.get(key + "/first"))
+        dom = Domain(self.get(key + "/shape"),
+                     self.get(key + "/spacing"),
+                     self.get(key + "/origin"),
+                     self.get(key + "/first"))
+        return dom
 
     def put_domain(self, key, dom):
         '''
@@ -64,8 +65,8 @@ class Main:
         Note, this saves to a group of datasets (directory of files)
         '''
         self.put(key + "/shape", dom.shape)
-        self.put(key + "/origin", dom.origin)
         self.put(key + "/spacing", dom.spacing)
+        self.put(key + "/origin", dom.origin)
         self.put(key + "/first", dom.first)
 
         
