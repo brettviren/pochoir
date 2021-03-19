@@ -28,12 +28,14 @@ def module(array):
     if isinstance(array, numpy.ndarray):
         return numpy
 
+
 def fromstr1(string, dtype=float):
     '''
     Parse string as 1d list of numbers, return array
     '''
     s = [dtype(s.strip()) for s in string.split(",") if s.strip()]
     return to_numpy(s)
+
 
 def to_numpy(array):
     '''
@@ -43,13 +45,15 @@ def to_numpy(array):
         return array.to('cpu').numpy()
     return numpy.array(array)
 
+
 def to_torch(array):
     '''
     Return array or a new torch tensor if not already one.
     '''
     return torch.tensor(array)
     
-def gradient(array):
+
+def gradient(array, spacing = None):
     '''
     Return the finite difference gradient of the array.
     '''
@@ -61,7 +65,10 @@ def gradient(array):
     # arithmetic operations.  At the cost of possible GPU->CPU->GPU
     # transit, for now we do the dirty:
     a = array.to('cpu').numpy()
-    g = numpy.array(numpy.gradient(a))
+    gvec = numpy.gradient(a)
+    if spacing is not None:
+        gvec = [v/s for v,s in zip(gvec, spacing)]
+    g = numpy.array(gvec)
     return torch.tensor(g, device=array.device)
     
 
@@ -73,14 +80,21 @@ def dup(array):
         return torch.clone(array)
     return numpy.copy(array)
 
+
 def core_slices1(array):
+    '''
+    Return slices with core shape of and array made one cell in each
+    direction.
+    '''
     return tuple([slice(1,s-1) for s in array.shape])
+
 
 def core1(array):
     '''
     Return core part of array, removing a 1 element pad
     '''
     return array[core_slices1(array)]
+
 
 def pad1(array):
     '''
