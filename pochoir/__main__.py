@@ -171,7 +171,7 @@ def plot_image(ctx, domain, dataset, plotfile):
     '''
     arr = ctx.obj.get(dataset)
     if domain:
-        domain = ctx.obj.get_domain(domain):
+        domain = ctx.obj.get_domain(domain)
     pochoir.plots.image(arr, plotfile, domain)
 
 @cli.command("plot-quiver")
