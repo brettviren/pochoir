@@ -41,6 +41,10 @@ operation of FDM is sometimes described as a "stencil" convolution.
 The name /pochoir/ describes a stencil-based art style.  No constraint
 is intended on your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
 
+** Documentation
+
+In addition to this file see the [[file:manual.org][manual]].
+
 * Install
 
 ~pochoir~ installs in the "usual Python way".  Use of ~pip~ and a Python
