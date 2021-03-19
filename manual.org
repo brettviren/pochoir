@@ -1,0 +1,90 @@
+#+title: pochoir user manual
+
+* Introduction
+
+This describes how to use ~pochoir~.
+
+Following sections:
+
+- getting started
+- usage tutorial
+- developer guide
+
+Remaining subsections describe ~pochoir~ concepts
+
+** Overview of calculating response functions
+
+** FDM for Laplace boundary value problem
+
+- characteristics of problem where FDM is applicable (grid vs geometry feature sizes)
+- define terms
+  - domain
+  - boundary values
+  - initial values
+  - boundary condition
+
+** RK4/5 for paths initial value problem
+
+
+* Getting started
+
+- installation of package
+- using CPU vs GPU
+- data and storage model
+
+* Tutorial
+
+** Define a problem domain
+
+- 2D vs 3D
+- define, store, retrieve
+
+** Define initial and boundary value arrays
+
+- manual definition in code (~pochoir.example~ and maybe something more)
+- electrode description via shapes provided as input configuration
+
+** Solve Laplace equation
+
+*** 2D Laplace
+
+- control convergence
+- restart from previous solution
+- visualize (matplotlib)
+
+*** 3D Laplace
+
+- change in args w.r.t. 2D
+- understand time/resource scaling with 2D
+- visualize (matplotlib and paraview)
+
+*** Use 2D as boundary condition for 3D
+
+- derive 3D boundary values to 2D and merge with 3D boundary values
+- understand precision of 2D as a function of 3D domain size
+
+** Calculate and visualize gradient fields
+
+- 2D and 3D matplotlib
+- paraview
+
+** Path initial value problem
+
+- specify problem to solve
+- specify initial value
+- apply solver
+- store result
+- visualize (matplotlib and paraview)
+
+** Calculate responses
+
+- combine path and fields for schockley-ramo
+- exploit symmetry and equivalences
+- visualize
+
+** Convert to Wire-Cell
+
+** Automation with Snakemake
+
+- full chain, repeatable, performant processing
+- what knobs to tune
