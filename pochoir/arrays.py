@@ -1,23 +1,18 @@
 #!/usr/bin/env python
 '''
 Low-level functions for arrays.  
-
-Avoid directly importing numpy or torch.
-
-By default, arrays are numpy arrays.
-
 '''
 
 # Ideally, this is only module to import these two:
 import numpy
 import torch
 
-# import limited numpy api
+# import limited numpy api.
+# fixme: need to rethink this....
 ones = numpy.ones
 zeros = numpy.zeros
 linspace = numpy.linspace
 meshgrid = numpy.meshgrid
-
 
 def module(array):
     '''
