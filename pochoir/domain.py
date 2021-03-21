@@ -95,9 +95,9 @@ class Domain:
         coordinate = origin + index × spacing
         '''
         ret = list()
-        for num, sp, o, f in zip(self.shape, self.spacing, self.origin, self.first):
-            first = o + f * sp
-            last  = o + (f + num - 1) * sp
+        for num, sp, o in zip(self.shape, self.spacing, self.origin):
+            first = o 
+            last  = o + (num - 1) * sp
             ret.append(numpy.linspace(first, last, num))
         return ret
         

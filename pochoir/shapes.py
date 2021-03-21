@@ -12,66 +12,6 @@ that is required.
 import numpy
 from math import sqrt, floor
 
-def make_slices(ind1, ind2, shape=None, first=None):
-    '''
-    Return slices, one for each dimension, spanning ind1->ind2,
-    inclusive.
-
-    If first and shape are given, assure slice is bound to fit inside
-    [first, first+shape] inclusive.  Default value for first is zeros.
-    '''
-    ret = list()
-    for axis, (i1, i2) in enumerate(zip(ind1,ind2)):
-        if not shape:
-            ret.append(slice(i1, i2+1))
-            continue
-        n = shape[axis]
-        if first:
-            f = f[axis]
-        else:
-            f = 0
-        ret.append(slice(max(f,i1), min(i2+1, n)))
-        continue
-    return tuple(ret)
-
-
-def cylinder_grid(dom, arr, value, radius, center, hheight, axis):
-    '''
-    Paint grid points of array with a value inside a 3D cylinder.
-
-    Cylinder is described by its radius, center and half-height in
-    spatial unit and the axis to which it is parallel.
-
-    '''
-
-    r2 = radius*radius
-
-    #positions along axis
-    c0 = center[axis]
-    top = center[axis] + hheight
-    bot = center[axis] - hheight
-    along = slice(bot,top+1)
-
-    axis1 = (axis+1)%3
-    axis2 = (axis+2)%3
-
-    c1 = center[axis1]
-    c2 = center[axis2]
-
-    for i in range(radius+1):
-        rho = int(floor(sqrt(r2-i*i)))
-        across = slice(c1-rho, c1+rho+1)
-        atp = slice(c2+i,c2+i+1)
-        atm = slice(c2-i,c2-i+1)
-
-        sl = [None]*3
-        sl[axis] = along
-        sl[axis1] = across
-        sl[axis2] = atp
-        arr[tuple(sl)] = value
-        sl[axis2] = atm
-        arr[tuple(sl)] = value
-        
 
 def box(dom, arr, value, pt1, pt2):
     '''

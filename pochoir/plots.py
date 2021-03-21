@@ -32,6 +32,7 @@ def quiver(varr, fname, domain):
 
     mg = domain.meshgrid
 
+    plt.clf()
     if ndim == 2:               # 2D
         plt.quiver(mg[0], mg[1],
                    varr[0], varr[1], units='xy')
