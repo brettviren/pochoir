@@ -13,25 +13,21 @@ import numpy
 from math import sqrt, floor
 
 
-def box(dom, arr, value, pt1, pt2):
-    '''
-    Paint 3D box with value.
-    '''
-    pt1 = dom.index(pt1)
-    pt2 = dom.index(pt2)
+def known(ndim):
+    if ndim == 2:
+        return ("rectangle", "circle")
+    if ndim == 3:
+        return ("box", "cylinder")
+    raise ValueError(f'Unsupported dnumber of dimensions: {ndim}')
 
-    s = [dom.crop(slice(pt1[a], pt2[a]), axis=a) for a in [0,1,2]]
-    arr[tuple(s)] = value
-
-
-def rectangle(dom, arr, value, pt1, pt2):
+def rectangle(dom, arr, value, point1, point2):
     '''
     Paint array inside rectangle defined by two boints with value.
     '''
-    pt1 = dom.index(pt1)
-    pt2 = dom.index(pt2)
+    point1 = dom.index(point1)
+    point2 = dom.index(point2)
 
-    s = [dom.crop(slice(pt1[a], pt2[a]), axis=a) for a in [0,1]]
+    s = [dom.crop(slice(point1[a], point2[a]), axis=a) for a in [0,1]]
     arr[tuple(s)] = value
 
 
@@ -59,6 +55,17 @@ def circle(dom, arr, value, radius, center):
         hj = int(floor(sqrt(h)/dom.spacing[1]))
         jslc = dom.crop(slice(icen[1]-hj, icen[1]+hj+1), axis=1)
         arr[i, jslc] = value
+
+def box(dom, arr, value, point1, point2):
+    '''
+    Paint 3D box with value.
+    '''
+    point1 = dom.index(point1)
+    point2 = dom.index(point2)
+
+    s = [dom.crop(slice(point1[a], point2[a]), axis=a) for a in [0,1,2]]
+    arr[tuple(s)] = value
+
 
 def cylinder(dom, arr, value, radius, center, hheight, axis):
     '''

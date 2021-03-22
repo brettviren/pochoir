@@ -4,8 +4,6 @@ pochoir support for HDF5 file format
 '''
 
 import h5py
-from .util import flatten
-
 
 # we put a thin wrapper around h5py.File to keep open npz or other formats
 class Store:

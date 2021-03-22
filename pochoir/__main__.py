@@ -2,7 +2,7 @@
 '''
 CLI to pochoir
 '''
-
+import json
 import click
 import pochoir
 # no others than click and pochoir!
@@ -79,11 +79,9 @@ def grad(ctx, domain, scalar, vector):
               help="The spatial location of zero index grid point (def=0's)")
 @click.option("-s","--spacing", default=None, type=str,
               help="The grid spacing as scalar or vector (def=1's)")
-@click.option("-f","--first", default=None, type=str,
-              help="The first indices for each dimension (def=0's)")
 @click.argument("name")
 @click.pass_context
-def domain(ctx, shape, origin, spacing, first, name):
+def domain(ctx, shape, origin, spacing, name):
     '''
     Produce a "domain" and store it to the output dataset.
 
@@ -99,9 +97,6 @@ def domain(ctx, shape, origin, spacing, first, name):
         - spacing :: a scalar or N-D vector in same distance units as
           used in origin and which gives a common or a per-dimension
           spacing between neighboring grid points.
-
-        - first :: an N-D integer vector giving the first valid index
-          in each dimension (which is almost always the default, 0)
 
     A vector is given as a comma-separated list of numbers.
 
@@ -124,21 +119,77 @@ def domain(ctx, shape, origin, spacing, first, name):
     else:
         origin = pochoir.arrays.zeros(ndim)
 
-    if first:
-        first = pochoir.arrays.fromstr1(first, int)
-    else:
-        first = pochoir.arrays.zeros(ndim, dtype=int)
-
-    dom = pochoir.domain.Domain(shape, spacing, origin, first)
+    dom = pochoir.domain.Domain(shape, spacing, origin)
     ctx.obj.put_domain(name, dom)
 
     
+@cli.command()
+@click.option("-i","--initial", type=str,
+              help="Name initial value array")
+@click.option("-b","--boundary", type=str,
+              help="Name the boundary array")
+@click.option("-a","--ambient", type=float, default=0.0,
+              help="Ambient potential")
+@click.option("-d","--domain", default=None, type=str,
+              help="Use domain for the plot")
+@click.argument("filenames", nargs=-1)
+@click.pass_context
+def init(ctx, initial, boundary, ambient, domain, filenames):
+    '''
+    Initialize a problem with a shape file.
+
+    This produces named initial and boundary value arrays.
+
+    Filename arguments give JSON files which are progressively
+    loadeded to update a configuration of shapes and their potentils.
+
+    The full data structure is:
+
+        {
+            shapes: [ordered list of shapes],
+            values: {shape name to value map},
+        }
+
+    Each element of the shapes array holds attributes:
+
+        {
+            name: "unique name of shape",
+            type: "shape type name",
+            ....: parameters depending on shape type
+        }
+
+    2D shapes and their args are:
+
+    - rectangle :: "point1" and "point2" giving opposite corners as 2-element lists
+    - circle :: "center" as 2 element list and "radius" 
+
+    3D shapes and their args are:
+
+    - box :: "point1" and "point2" giving opposite corners as 3-element lists
+    - cylinder :: "center" and "radius" and "hheight" (half height) and axis of symmetry
+
+    All spatial distances are given in the same unit as the domain spacing.
+    The domain sets the allowed dimensionality.
+    '''
+    dom = ctx.obj.get_domain(domain)
+
+    cfg = dict()
+    for fname in filenames:
+        cfg.update(json.loads(open(fname,'rb').read().decode()))
+
+    iarr, barr = pochoir.geom.init(dom, cfg, ambient)
+
+    fnames = ",".join(filenames)
+    ctx.obj.put(initial, iarr, result="initial",
+                geom=fnames, domain=domain)
+    ctx.obj.put(boundary, barr, result="boundary",
+                geom=fnames, domain=domain)
 
 @cli.command()
 @click.option("-i","--initial", type=str,
-              help="Name initial value array, elements include boundary values")
+              help="Name initial value array")
 @click.option("-b","--boundary", type=str,
-              help="Name the boundary array, zero value elemnts subject to solving")
+              help="Name the boundary array")
 @click.option("-e","--edges", type=str,
               help="Comma separated list of 'fixed' or 'periodic' giving domain edge conditions")
 @click.option("--precision", type=float, default=0.0,

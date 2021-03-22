@@ -43,7 +43,7 @@ class Main:
         '''
         Return in input array at key.
         '''
-        return arrays.to_torch(self.instore.get(key)).to(self.device)
+        return self.instore.get(key)
 
     def get_domain(self, key):
         '''
@@ -54,8 +54,7 @@ class Main:
         '''
         dom = Domain(self.get(key + "/shape"),
                      self.get(key + "/spacing"),
-                     self.get(key + "/origin"),
-                     self.get(key + "/first"))
+                     self.get(key + "/origin"))
         return dom
 
     def put_domain(self, key, dom):
@@ -67,10 +66,6 @@ class Main:
         self.put(key + "/shape", dom.shape)
         self.put(key + "/spacing", dom.spacing)
         self.put(key + "/origin", dom.origin)
-        self.put(key + "/first", dom.first)
-
-        
-
 
     def put(self, key, array, **metadata):
         '''

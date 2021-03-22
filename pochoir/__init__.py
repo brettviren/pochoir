@@ -2,6 +2,7 @@
 from . import persist
 from . import examples
 from . import main
+from . import geom
 from . import fdm
 from . import domain
 from . import plots
