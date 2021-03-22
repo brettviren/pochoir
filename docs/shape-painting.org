@@ -1,0 +1,60 @@
+*** Shapes
+
+The user may create IVA and BVA arrays in any convenient way.
+However, ~pochoir~ provides one way to build these arrays by defining
+electrodes as shapes in 2D or 3D space.  Given an ordered list of
+shapes and their potential values, ~pochoir~ can "paint" the potential
+on grid points "inside" the shape.
+
+Both shapes and their potential values are provided as JSON.
+Description of shapes follow a certain schema depending on if they are
+intended for a 2D or 3D domain.  The available shapes and their
+parameters are:
+
+2D shapes:
+
+- ~circle~ :: provide ~radius~ and a 2 element list giving ~center~
+
+- ~rectangle~ :: provide ~point1~ and ~point2~, each a 2-element list giving diagonally opposite corners of the rectangle
+
+3D shapes:
+
+- ~cylinder~ :: provide ~radius~ a 3-element list giving ~center~ and ~hheight~ a half-height
+
+- ~box~ :: provide ~point1~ and ~point2~, each a 3-element list giving diagonally opposite corners of the box
+
+Each shape object is also provides a ~type~ that holds the shape type
+name from the above list.  Each object also provides a ~name~ which
+uniquely is used to look up a potential values.  One should assign a
+~name~ to each shape so that the shape may be used for different types
+of FDM solutions (eg, drift vs weighting).
+
+An example circle:
+
+#+begin_src json
+      {
+         "center": [
+            -2.5,
+            0
+         ],
+         "name": "holeA0",
+         "radius": 2,
+         "type": "circle"
+      },
+#+end_src
+
+To then assign a potential value to a shape, a ~values~ object is given
+which supplies a map from shape ~name~ values to a numeric value (a
+voltage).  If a shape is not represented in ~values~ then it is assumed
+to take a default "ambient" potential.  Such a shape is typically used
+to create a hole in some larger shape, as the above ~holeA0~ is.  An
+example ~values~:
+
+#+begin_src json
+   "values": {
+      "strip0": 100,
+      "strip1": 100,
+      "strip2": 100
+   }
+#+end_src
+

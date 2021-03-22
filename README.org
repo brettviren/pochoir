@@ -3,36 +3,33 @@
 
 * Overview
 
-This package solves for /field responses/ which model current induced in
-electrodes by electric charge (eg, electrons from ionization) drifting
-due to potentials applied to the electrodes.
+See the [[file:manual.org][manual]] for details.
 
-** High level structure
+The ~pochoir~ package solves for /field responses/ which model the current
+induced in electrodes by electric charge (eg, electrons from
+ionization) drifting through an electrostatic field applied to the
+electrodes.
 
 The overall solution is factored into a number of core sub-problems:
 
-- Laplace boundary value problems in 2D and 3D using the
+- Specify electrodes and their potentials on a problem domain.
+- Solve Laplace /boundary value problems/ in 2D and 3D using the
   finite-difference method (FDM) to determine the electrostatic
   potential fields from the applied and the "weighting" electrode
   voltages.
-- Initial value problem to determine paths of charge drift in the
-  applied potential.
-- Application of the [[https://en.wikipedia.org/wiki/Shockley%E2%80%93Ramo_theorem][Shockley-Ramo theorem]] to combine the above
-  solutions to get currents induced in electrodes.
+- Solve the /initial value problem/ to determine paths of charge
+  driftiing in the applied potential.
+- Apply the [[https://en.wikipedia.org/wiki/Shockley%E2%80%93Ramo_theorem][Shockley-Ramo theorem]] to combine the above solutions to
+  get currents induced in electrodes.
 
-** Usage patterns
-
-The ~pochoir~ package provides a Python3 module and command line
-interface.  
-
-An overall problem is solved by connecting subproblems as nodes in
-graph joined by edges passing data.  When using the CLI, these edges
-may be provided by data in individual Numpy ~.npz~ files or as datasets
-in an HDF5 file.
-
-When using the ~pochoir~ Python module, data is in the form of Numpy
-arrays or PyTorch tensors and building a full solution from parts is
-left to the application.
+These sub-problems may be composed by connecting output from one to
+input of another through the ~pochoir~ data store.  ~pochoir~ can also
+convert data in the store to graphics formats (PNG or PDF) for
+visualization and can export to other formats (VTK) for use in other
+visualization tools (~paraview~).  The ~pochoir~ store may use an HDF5
+file.  Following an HDF5 model, ~pochoir~ may also use a collection of
+Numpy NPZ (dataset) and JSON (metadata) files grouped by file system
+directories.
 
 ** The name
 
@@ -41,9 +38,6 @@ operation of FDM is sometimes described as a "stencil" convolution.
 The name /pochoir/ describes a stencil-based art style.  No constraint
 is intended on your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
 
-** Documentation
-
-In addition to this file see the [[file:manual.org][manual]].
 
 * Install
 
@@ -83,6 +77,8 @@ Additional commands may be needed to allow PyTorch to use your GPU.
 
 * Usage
 
+The ~pochoir~ command line user interface provides online help:
+
 #+begin_src shell :exports both :results output code :wrap example
 pochoir
 #+end_src
@@ -102,34 +98,47 @@ Options:
   --help                   Show this message and exit.
 
 Commands:
-  domain            Produce a domain array and store to output dataset.
-  example           Generate a boundary and initial array example
+  domain            Produce a "domain" and store it to the output dataset.
+  example           Generate a boundary and initial array example (try...
   export-vtk-image  Export a dataset to a vtk file of same name
   fdm               Solve a Laplace boundary value problem with finite...
   grad              Calculate the gradient of a scalar field.
+  init              Initialize a problem with a shape file.
   plot-image        Visualize a dataset as 2D image
   plot-quiver       Visualize a 2D or 3D vector field as a "quiver" plot.
   version           Print the version
 #+end_example
 
-
-** Store
-
-~pochoir~ has an idea of a "data store" to hold output from one command
-to use as input to another.  The store may be an HDF5 file or a
-directory of NPZ files (equivalent to HDF5 datasets) and JSON files
-(equivalent to HDF5 metadata).
-
-The store may be given on the command line:
-
-#+begin_example
-pochoir -s /path/to/store      [command] [...]
-pochoir -s /path/to/store.hdf  [command] [...]
-#+end_example
-
-A store may also be given in an environment variable.
+Of particular note, one may set the store via an environment variable:
 
 #+begin_example
 export POCHOIR_STORE=/path/to/store
 #+end_example
 
+Individual commands provide more details on their use:
+
+#+begin_src shell :exports both :results output code :wrap example
+pochoir fdm --help
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Usage: pochoir fdm [OPTIONS] SOLUTION ERROR
+
+  Solve a Laplace boundary value problem with finite difference method
+  storing the result as named solution.  The error names an output array to
+  hold difference in last two iterations.
+
+Options:
+  -i, --initial TEXT     Name initial value array
+  -b, --boundary TEXT    Name the boundary array
+  -e, --edges TEXT       Comma separated list of 'fixed' or 'periodic' giving
+                         domain edge conditions
+
+  --precision FLOAT      Finish when no changes larger than precision
+  --epoch INTEGER        Number of iterations before any check
+  -n, --nepochs INTEGER  Limit number of epochs (def: one epoch)
+  --help                 Show this message and exit.
+#+end_example
+
+Again, see the [[file:manual.org][manual]] for more details.

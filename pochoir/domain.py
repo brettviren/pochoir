@@ -31,6 +31,13 @@ class Domain:
         else:
             self.origin = numpy.array(origin)
 
+    @property
+    def bb(self):
+        '''
+        A pair of vectors giving opposite corners of the box bounding the domain.
+        '''
+        return [self.point([0]*len(self.shape)),
+                self.point(self.shape-1)]
 
     def point(self, index):
         '''
@@ -38,7 +45,6 @@ class Domain:
         '''
         index = numpy.array(index)
         return self.origin + index * self.spacing
-
 
     def index(self, point):
         '''

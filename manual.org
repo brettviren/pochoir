@@ -3,19 +3,22 @@
 
 * Introduction
 
-This describes how to use ~pochoir~.
-
-Following sections:
-
-- getting started
-- usage tutorial
-- developer guide
-
-Remaining subsections describe ~pochoir~ concepts
+This document describes how to use ~pochoir~.  In this section, high
+level concepts are introduced.  Subsequent sections provide concrete
+guides to get started using ~pochoir~, followed by a tutorial and
+finally a developer guide.
 
 ** Overview of calculating response functions
 
 - describe the steps and data products
+
+** Domains
+
+A /domain/ of a problem is the space on which it is defined.  Driven by
+the finite-difference method (FDM), a ~pochoir~ domain is a /finite,
+uniform, rectilinear/ (Cartesian) grid of points.  In general, the
+domain may be N-dimensional though for practical problems we are
+restricted to 2D or 3D.
 
 ** FDM for Laplace boundary value problem
 
@@ -28,6 +31,8 @@ Remaining subsections describe ~pochoir~ concepts
     - paths
 
 ** RK4/5 for paths initial value problem
+
+** Map S-R dot product across matrix of (path (x) weighting)
 
 
 * Getting started
@@ -75,18 +80,57 @@ Remaining subsections describe ~pochoir~ concepts
     - maybe jsonnet
   - do we allow import of data object from, say, external NPZ?
 
+
 * Tutorial
 
-This tutorial walks through the individual steps of calculating field
-responses for a 2D problem and ends with an example of how to automate
-the entire workflow.
+** Overview
 
-** Define the problem domain
+This tutorial walks through calculating field response for a detector
+very similar to real detectors, if idealized for simplicity.  It
+contains parallel ground plane and a cathode plane separated along the
+Z-axis which provides the nominal drift field.  Near the ground plane
+are two "anode" planes each with a series of strips parallel in their
+plane and mutually perpendicular across planes.  The anode planes have
+each a "bias voltage" applied and share through-holes so that electron
+drift paths may pass by the first "induction anode" plane and
+terminate on the second "collection anode" plane.
 
-A /domain/ of a problem is the space on which it is defined.  A ~pochoir~
-domain is a /finite, uniform, rectilinear/ (Cartesian) grid of points.
-In general, the grid may be N-dimensional though practical problems
-will require either 2D or 3D (or possibly a mix of both).
+The tutorial will make a compromise of using a low-resolution grid in
+order to perform the solution quickly.  After an initial solution,
+finer resolution will be explored in the context of comparing the use
+of CPU and GPU.
+
+A number of "tricks" are used to further reduce computation.  The
+drift field and paths are solved on a small domain exploiting periodic
+boundary conditions.  The weighting fields far from a strip of
+interest do not vary in the dimension parallel to the strip which
+allows 2D "far fields" to be calculated on a broad 2D domain and then
+connected to 3D "near fields" calculated on a smaller 3D domain.
+
+The tutorial then combines paths and weighting fields to produce
+current waveforms (the field response functions) and converts them to
+a format suitable for use by the Wire-Cell Toolkit detector simulation
+and signal processing.  Along the way, the tutorial will show how to
+visualize and export intermediate results from the ~pochoir~ data store.
+
+The tutorial will first walk through each step manually.  The last
+step will show how to put these steps together so they may be repeated
+automatically and how this can facilitate exploring "hyper parameters"
+such as grid density.  As the automation mechanism requires datasets
+as individual files we will use the NPZ+JSON store instead of a
+monolithic HDF5 file.
+
+
+** Initial Setup
+
+Install ~pochoir~ as described elsewhere.  To avoid repeating the
+~pochoi -s/--store~ option we also set:
+
+#+begin_example
+export POCHOIR_STORE=$(pwd)/tutorial-store
+#+end_example
+
+** Define the problem domains
 
 A domain can be created simply with the ~pochoir domain~ command:
 
@@ -112,9 +156,6 @@ Usage: pochoir domain [OPTIONS] NAME
       used in origin and which gives a common or a per-dimension
       spacing between neighboring grid points.
 
-      - first :: an N-D integer vector giving the first valid index       in
-      each dimension (which is almost always the default, 0)
-
   A vector is given as a comma-separated list of numbers.
 
   Note: this description corresponds to vtk/paraview uniform rectilinear
@@ -124,93 +165,80 @@ Options:
   -s, --shape TEXT    The number of grid points in each dimension
   -o, --origin TEXT   The spatial location of zero index grid point (def=0's)
   -s, --spacing TEXT  The grid spacing as scalar or vector (def=1's)
-  -f, --first TEXT    The first indices for each dimension (def=0's)
   --help              Show this message and exit.
 #+end_example
 
-As shown in the help, each of the four vectors can be given on the
-command line but only ~shape~ is required if the defaults are
-sufficient.  The size of the ~shape~ vector sets the dimension of the
-domain.
+The ~origin~ vector is optional but allows one to adopt a convention
+other than identifying it with the "zero index" grid point.  The ~shape~
+describes the number of grid points on each dimension and ~spacing~
+gives their common separation.
+
+We will store our domains in a common group named ~domain~.  We need
+three:
+
+- ~drift~ :: a 3D domain for drift field and paths
+- ~wfar~ :: common 2D domain for all "far" weighting fields
+- ~wnear~ :: common 3D domain for all "near" weighting field
+
+Next we describe electrode shapes to be defined in the domain.  To do
+this properly we must already know our models for the electrode shapes
+and how we wish to stitch ~wfar~ and ~wnear~.  For now, we just show the
+commands do create the domains and later will explain how the numbers
+are chosen.
 
 #+begin_src shell :exports both :results output code :wrap "example"
-  pochoir domain --shape 100,100 --spacing 0.1 adomain
-  ls -l store/adomain/
+  pochoir domain --shape 51,51,201 --spacing 0.1 drift
+  pochoir domain --shape 151,151,201 --spacing 0.1 wnear
+  pochoir domain --shape 1051,1051 --spacing 0.1 wfar
+  ls -l $POCHOIR_STORE
+  ls -l $POCHOIR_STORE/drift
 #+end_src
 
-#+RESULTS:
+#+RESULTS[63028b25cb770b7d413ef3a72610e8ad4f9ae97e]:
 #+begin_example
-total 16
--rw-rw-r-- 1 bv bv 280 Mar 19 15:29 first.npz
--rw-rw-r-- 1 bv bv 282 Mar 19 15:29 origin.npz
--rw-rw-r-- 1 bv bv 280 Mar 19 15:29 shape.npz
--rw-rw-r-- 1 bv bv 284 Mar 19 15:29 spacing.npz
+total 12
+drwxrwxr-x 2 bv bv 4096 Mar 22 14:12 drift
+drwxrwxr-x 2 bv bv 4096 Mar 22 14:12 wfar
+drwxrwxr-x 2 bv bv 4096 Mar 22 14:12 wnear
+total 12
+-rw-rw-r-- 1 bv bv 290 Mar 22 14:12 origin.npz
+-rw-rw-r-- 1 bv bv 288 Mar 22 14:12 shape.npz
+-rw-rw-r-- 1 bv bv 292 Mar 22 14:12 spacing.npz
 #+end_example
 
-#+begin_note
-This listing assumes the NPZ based store is used.  If using an HDF5 store,
-these four arrays are stored as datasets in an HDF5 group named
-~adomain~.
-#+end_note
-
-Once defined, a domain is referenced by the given name (~adomain~ here).
+Once defined, a domain is later referenced by its full path name for
+the group, eg ~domain/drift~.  The datasets are named according to their
+interpretation by ~pochoir~.
 
 ** Define initial and boundary value arrays
 
-An /initial value/ array provides a scalar field from which the FDM
-solution begins.  Each element holds either a known, applied potential
-or an initial guess.  The /boundary value/ array elements take a value
-of 1 or 0.  Unity indicates the corresponding element in the initial
-value array should be considered a fixed applied potential and all
-others are free to be adjusted by the FDM.
+An /initial value array/ (IVA) provides a scalar field from which the
+FDM solution begins.  Each element holds either a known, applied
+potential or an initial guess of its solution.  A /boundary value array/
+(BVA) asserts which of these two interpretations hold.  A ~True~ element
+of a BVA implies that the corresponding element of an IVA is fixed,
+else it may be updated by FDM.
 
-*** Example initial and boundary value arrays
+In general, the user must provide an IVA and BVA for drift and each
+weighting field calculation, though typically a common IVA is needed.
+To provide these arrays one must map a model of the real electrode
+geometry to the arrays via the constraints of the domain.
 
-A number of hard-wired examples are provided as examples:
+A user is free to do that any way that is convenient.  ~pochoir~
+provides two features that may help with the task.
 
-#+begin_src shell :exports both :results output code :wrap "example"
-  pochoir example --help
-  pochoir example list
-  pochoir example caps
-#+end_src
+First is support for "shape array painting" whereby the user provides
+descriptions of 2D or 3D shapes and a set of potential values and
+~pochoir~ will apply them to produce IVA and BVA.  See details in [[file:docs/shape-painting.org][Shape Painting]].
 
-#+RESULTS:
-#+begin_example
-Usage: pochoir example [OPTIONS] NAME
-
-  Generate a boundary and initial array example (try "list")
-
-Options:
-  --help  Show this message and exit.
-caps
-sandh
-#+end_example
-
-Here, the ~caps~ example is created.  It represents a fictional set of
-parallel plate capacitors.  The example populates arrays named
-~caps-initial~ and ~caps-boundary~ and they may be visualized:
-
-#+begin_src shell :exports both :results none
-  pochoir plot-image caps-boundary docs/caps-boundary.png
-  pochoir plot-image caps-initial docs/caps-initial.png
-#+end_src
+Second is ~pochoir~ provides high-level IVA/BVA generators for
+particular electrode configurations with are governed by higher level
+parameters.  For this tutorial we will use the ~sandh~ (strips and
+holes) high level generator.
 
 
 
-[[file:docs/caps-boundary.png]]
 
-[[file:docs/caps-initial.png]]
-
-
-*** Custom electrode description
-
-For arbitrary problems, the user may provide a description of the
-electrodes and their applied potentials and ~pochoir~ will render them
-to the domain grid.
-
-#+begin_caution
-This is work still to be provided.
-#+end_caution
 
 ** Solve Laplace equation
 
@@ -444,3 +472,7 @@ The ~pochoir plot-quiver~ can also produce results for 3D gradients.  A gradient
 
 - full chain, repeatable, performant processing
 - what knobs to tune
+
+
+* Developer guide
+t.b.d.

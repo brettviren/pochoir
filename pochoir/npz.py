@@ -28,6 +28,12 @@ class Store:
         self.mode = mode
 
     def dspath(self, key):
+        if key in ["",".","/"]:
+            return self.basedir
+
+        maybe_dir = self.basedir.joinpath(key)
+        if maybe_dir.is_dir():
+            return maybe_dir
         return self.basedir.joinpath(key + self.dsext)
 
     def get(self, key, metadata=False):
@@ -36,7 +42,12 @@ class Store:
         '''
         dp = self.dspath(key)
         if not dp.exists():
-            raise KeyError(f'no dataset for key {key}, tried {dp.resolve()}')
+            raise KeyError(f'no dataset for key "{key}", tried {dp.resolve()}')
+        if dp.is_dir():
+            return (tuple([f.stem for f in dp.glob("*") if f.is_dir()]),
+                    tuple([f.stem for f in dp.glob("*"+self.dsext)]),
+                    tuple([f.stem for f in dp.glob("*"+self.mdext)]))
+
         arrs = numpy.load(dp.resolve())
         arr = arrs[dp.stem]
         if metadata:
@@ -50,7 +61,6 @@ class Store:
     def put(self, key, value, **attrs):
         if self.mode == 'r':
             raise OSError("Unable to create link (read only)")
-
         dp = self.dspath(key)
         if dp.exists():
             if self.mode in ('a', 'r+'):

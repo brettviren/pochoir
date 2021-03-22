@@ -53,6 +53,58 @@ def example(ctx, name):
     
 
 @cli.command()
+@click.argument("things", nargs=-1)
+@click.pass_context
+def ls(ctx, things):
+    '''
+    List the store store
+    '''
+    if not things:
+        things=["/"]
+
+    for thing in things:
+        got = ctx.obj.get(thing)
+        if isinstance(got, tuple):  # group
+            dirs, arrs, mds = got
+            print(f'store {ctx.obj.instore_name}: group {thing}:')
+            for dirname in dirs:
+                print(f'{dirname}/')
+            for arrname in arrs:
+                arr = ctx.obj.get(thing + "/" + arrname)
+                print (f'{type(arr)} {arr.shape} {arrname}')
+            return
+        # dataset or md, for now, assume the former
+        print (f'{type(got)} {got.shape} {thing}')
+
+
+@cli.command()
+@click.option("-d", "--domain", type=str, 
+              help="Use named dataset for the domain, (def: indices)")
+@click.option("-i","--initial", type=str,
+              help="Name initial value array")
+@click.option("-b","--boundary", type=str,
+              help="Name the boundary array")
+@click.option("-g","--generator", type=str,
+              help="Name the generator module")
+@click.argument("configs", nargs=-1)
+@click.pass_context
+def gen(ctx, domain, generator, initial, boundary, configs):
+    '''
+    Generate initial and boundary value arrays from a high-level generator.
+    '''
+    cfg = dict()
+    for config in configs:
+        cfg.update(json.loads(open(config,'rb').read().decode()))
+    meth = getattr(pochoir.gen, generator)
+
+    dom = ctx.obj.get_domain(domain)
+    iarr, barr = meth(dom, cfg)
+    params = dict(domain=domain, result="gen", method=method, config=config)
+    ctx.obj.put(initial, iarr, **params)
+    ctx.obj.put(boundary, barr, **params)
+    
+
+@cli.command()
 @click.option("-d", "--domain", type=str, default=None,
               help="Use named dataset for the domain, (def: indices)")
 @click.argument("scalar")

@@ -31,6 +31,7 @@ class Main:
             - outstore gives file name providing output storage.  If
               given the input store is made readonly.
         '''
+        self.instore_name = instore
         if outstore is None:
             self.instore = persist.store(instore, 'a')
             self.outstore = self.instore
