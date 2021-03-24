@@ -1,2 +1,41 @@
-configfile: "tutorial.json"
+import json
 
+DOMAINS = ["wfar",]
+
+dom_cfg_dir = "cfg/domains"
+
+rule gengeomcfg:
+    input:
+        "{geom}.jsonnet"
+    output:
+        "geomcfg/{geom}.json"
+    shell:
+        "jsonnet -o {output} {input}"
+
+        
+rule gencfg:
+    input:
+        "tutorial.jsonnet"
+    output:
+        expand(dom_cfg_dir + "/{domain}.json", domain=DOMAINS)
+    shell:
+        "jsonnet -m cfg {input}"
+
+def load_domain_cfg(w):
+    ret = json.load(open(f'{dom_cfg_dir}/{w.domain}.json'))
+    ret.update(store="store")
+    print("DOMAIN:",ret)
+    return ret 
+
+rule domain:
+    input:
+        cfgfile = dom_cfg_dir + "/{domain}.json"
+    output:
+        outdir = directory("store/domains/{domain}"),
+    params:
+        dom = load_domain_cfg
+    shell:
+        "pochoir -s {params.dom[store]} domain"
+        "  --shape {params.dom[shape]}"
+        "  --spacing {params.dom[spacing]}"
+        "  domains/{wildcards.domain}"
