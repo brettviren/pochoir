@@ -9,7 +9,7 @@ import numpy
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-def image(arr, fname, domain):
+def image(arr, fname, domain, title=""):
     if len(arr.shape) != 2:
         raise ValueError("image plots take 2D arrays")
 
@@ -18,7 +18,8 @@ def image(arr, fname, domain):
     #plt.title("initial")
     extent = None
     if domain:
-        extent = domain.imshow_extent
+        extent = domain.imshow_extent()
+    plt.title(title)
     plt.imshow(arr, interpolation='none', aspect='auto',
                extent = extent)
     plt.colorbar()

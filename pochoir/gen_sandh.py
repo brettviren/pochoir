@@ -46,8 +46,9 @@ A "holes" object:
 
     - spacing :: a 2-tuple holding distance between holes
 '''
-
+import numpy
 from pochoir.shape_schema import rectangle
+from pochoir.geom import init as geom_init
 
 def twod_holes(dom, name,  axis, height, thick, holes, potential=None, **kwds):
     '''
@@ -63,8 +64,13 @@ def twod_holes(dom, name,  axis, height, thick, holes, potential=None, **kwds):
     center = dom.point(dom.shape//2)
     s0p = center[paxis] + offset
     
+    p1 = [None]*2
+    p2 = [None]*2
+    p1[axis] = height-0.5*thick
+    p2[axis] = height+0.5*thick
+
     bb = dom.bb
-    for count, sp in enumerate(numpy.arange(range(s0p, bb[1][paxis], spacing))):
+    for count, sp in enumerate(numpy.arange(s0p, bb[1][paxis], spacing)):
         if not count:
             sname = f'{name}-hole-0'
         else:
@@ -75,7 +81,7 @@ def twod_holes(dom, name,  axis, height, thick, holes, potential=None, **kwds):
         p2[paxis] = sp + radius
         shapes.append(rectangle(sname, p1, p2))
             
-    for count, sp in enumerate(numpy.arange(range(s0p - spacing, bb[0][paxis], -spacing))):
+    for count, sp in enumerate(numpy.arange(s0p - spacing, bb[0][paxis], -spacing)):
         sname = f'{name}-hole-m{count+1}'
         p1=list(p1)
         p2=list(p2)
@@ -116,10 +122,10 @@ def twod_strips(dom, name, axis, height, thick, strips, potential=None, **kwds):
     sname = name + "-strip0"
     shapes.append(rectangle(sname, p1, p2))
     if potential is not None:
-        values[name] = potential
+        values[sname] = potential
 
     bb = dom.bb
-    for count, sp in enumerate(numpy.arange(range(s0p + pitch, bb[1][paxis], pitch))):
+    for count, sp in enumerate(numpy.arange(s0p + pitch, bb[1][paxis], pitch)):
         sname = f'{name}-strip-p{count+1}'
         p1=list(p1)
         p2=list(p2)
@@ -127,9 +133,9 @@ def twod_strips(dom, name, axis, height, thick, strips, potential=None, **kwds):
         p2[paxis] = sp + 0.5*wid
         shapes.append(rectangle(sname, p1, p2))
         if not weighting and potential is not None:
-            values[name] = potential
+            values[sname] = potential
             
-    for count, sp in enumerate(numpy.arange(range(s0p + pitch, bb[0][paxis], -pitch))):
+    for count, sp in enumerate(numpy.arange(s0p + pitch, bb[0][paxis], -pitch)):
         sname = f'{name}-strip-m{count+1}'
         p1=list(p1)
         p2=list(p2)
@@ -137,10 +143,10 @@ def twod_strips(dom, name, axis, height, thick, strips, potential=None, **kwds):
         p2[paxis] = sp + 0.5*wid
         shapes.append(rectangle(sname, p1, p2))
         if not weighting and potential is not None:
-            values[name] = potential
+            values[sname] = potential
         
+    # print(f'twod_strips: {values}')
     return shapes, values
-
 
 
 def twod_plane(dom, name, axis, height, thick, potential=None, **kwds):
@@ -163,6 +169,7 @@ def twod_plane(dom, name, axis, height, thick, potential=None, **kwds):
     v = dict()
     if potential is not None:
         v[name] = potential
+    # print(f'twod_plane: {v}')
     return s,v
 
 
@@ -178,20 +185,29 @@ def gen_twod(dom, cfg):
     
     for iplane, plane in enumerate(cfg["planes"]):
         strips = plane.get('strips', None)
-        if strips:
-            s,v = twod_strips(dom, f'plane{iplane}', **plane)
-        else:
+        if strips is None:
             s,v = twod_plane(dom, f'plane{iplane}', **plane)
-        shapes.append(s)
+        else:
+            s,v = twod_strips(dom, f'plane{iplane}', **plane)
+        shapes += s
         values.update(v)
 
         holes = plane.get('holes', None)
         if holes:
             s,v = twod_holes(dom, f'plane{iplane}', **plane)
-        shapes.append(s)
-        values.update(v)
+            shapes += s
+            values.update(v)
+
+    # print(values)
+    return shapes, values
 
 def generator(dom, cfg):
     if len(dom.shape) == 2:
-        return gen_twod(dom, cfg)
-    raise ValueError("sandh only supports 2D for now")
+        shapes, values = gen_twod(dom, cfg)
+    else:
+        raise ValueError("sandh only supports 2D for now")
+
+    ambient = cfg.get("ambient", 0.0)
+    geom = dict(shapes=shapes, values=values)
+    #print(geom['values'])
+    return geom_init(dom, geom, ambient)

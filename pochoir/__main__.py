@@ -99,7 +99,7 @@ def gen(ctx, domain, generator, initial, boundary, configs):
 
     dom = ctx.obj.get_domain(domain)
     iarr, barr = meth(dom, cfg)
-    params = dict(domain=domain, result="gen", method=method, config=config)
+    params = dict(domain=domain, result="gen", configs=','.join(configs))
     ctx.obj.put(initial, iarr, **params)
     ctx.obj.put(boundary, barr, **params)
     
@@ -288,7 +288,7 @@ def plot_image(ctx, domain, dataset, plotfile):
     arr = ctx.obj.get(dataset)
     if domain:
         domain = ctx.obj.get_domain(domain)
-    pochoir.plots.image(arr, plotfile, domain)
+    pochoir.plots.image(arr, plotfile, domain, dataset)
 
 @cli.command("plot-quiver")
 @click.option("-d", "--domain", type=str, default=None,
