@@ -8,6 +8,7 @@ from . import fdm
 from . import domain
 from . import plots
 from . import vtkexport
+from . import pathfinder
 
 from .version import version
 

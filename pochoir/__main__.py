@@ -99,7 +99,7 @@ def gen(ctx, domain, generator, initial, boundary, configs):
 
     dom = ctx.obj.get_domain(domain)
     iarr, barr = meth(dom, cfg)
-    params = dict(domain=domain, result="gen", configs=','.join(configs))
+    params = dict(domain=domain, result="gen", method=method, config=config)
     ctx.obj.put(initial, iarr, **params)
     ctx.obj.put(boundary, barr, **params)
     
@@ -274,6 +274,38 @@ def fdm(ctx, initial, boundary,
                   precision=precision)
     ctx.obj.put(solution, arr, result="solution", **params)
     ctx.obj.put(error, err, result="error", **params)
+
+
+@cli.command()
+
+@click.option("-b","--boundary", type=str,
+              help="Name the boundary array")
+@click.option("-e","--efield", type=str,
+              help="Name the efield array")
+@click.option("-p","--position", type=str, help="Name array of initial position values")
+@click.option("-v","--velocity", type=str, help="Name array of initial velocity values")
+@click.option("-s","--step", type=float, default=0.05,
+              help="Set step in time")
+@click.option("-t","--time", type=float, default=200,
+              help="Set total time (start at 0.0)")
+@click.argument("solutionp")
+@click.argument("solutionv")
+@click.pass_context
+def pathfinder(ctx, boundary, efield, position, velocity,step,time,solutionp,solutionv):
+    '''
+        RK solver for electron in EB field
+        
+        the initial positions/velocities arrays should be in sync with each element corresponding to x,y,z and vx,vy,vz of one particle
+    '''
+    barr = ctx.obj.get(boundary)
+    ef = ctx.obj.get(efield)
+    ipos = ctx.obj.get(position)
+    ivel= ctx.obj.get(velocities)
+    pos, vel = pochoir.pathfinder.solve(ipos, ivel, barr, ef, time, step)
+    params = dict(operation="pathfider", boundary=boundary,efield=efield,position=position,velocity=velocity,step=step,time=time)
+    ctx.obj.put(solutionp, pos, result="solutionp", **params)
+    ctx.obj.put(solutionv, vel, result="solutionv", **params)
+
     
 @cli.command("plot-image")
 @click.option("-d","--domain", default=None, type=str,
@@ -288,7 +320,7 @@ def plot_image(ctx, domain, dataset, plotfile):
     arr = ctx.obj.get(dataset)
     if domain:
         domain = ctx.obj.get_domain(domain)
-    pochoir.plots.image(arr, plotfile, domain, dataset)
+    pochoir.plots.image(arr, plotfile, domain)
 
 @cli.command("plot-quiver")
 @click.option("-d", "--domain", type=str, default=None,
