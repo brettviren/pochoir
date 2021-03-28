@@ -222,6 +222,8 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
 
     All spatial distances are given in the same unit as the domain spacing.
     The domain sets the allowed dimensionality.
+
+    See also the "gen" command for a high-level way to init.
     '''
     dom = ctx.obj.get_domain(domain)
 
@@ -277,13 +279,14 @@ def fdm(ctx, initial, boundary,
 
 
 @cli.command()
-
 @click.option("-b","--boundary", type=str,
               help="Name the boundary array")
 @click.option("-e","--efield", type=str,
               help="Name the efield array")
-@click.option("-p","--position", type=str, help="Name array of initial position values")
-@click.option("-v","--velocity", type=str, help="Name array of initial velocity values")
+@click.option("-p","--position", type=str,
+              help="Name array of initial position values")
+@click.option("-v","--velocity", type=str,
+              help="Name array of initial velocity values")
 @click.option("-s","--step", type=float, default=0.05,
               help="Set step in time")
 @click.option("-t","--time", type=float, default=200,
@@ -291,18 +294,22 @@ def fdm(ctx, initial, boundary,
 @click.argument("solutionp")
 @click.argument("solutionv")
 @click.pass_context
-def pathfinder(ctx, boundary, efield, position, velocity,step,time,solutionp,solutionv):
+def pathfinder(ctx, boundary, efield, position, velocity, step, time,
+               solutionp, solutionv):
     '''
-        RK solver for electron in EB field
-        
-        the initial positions/velocities arrays should be in sync with each element corresponding to x,y,z and vx,vy,vz of one particle
+    RK solver for electron in EB field
+
+    The initial positions/velocities arrays should be in sync with
+    each element corresponding to x,y,z and vx,vy,vz of one particle.
     '''
     barr = ctx.obj.get(boundary)
     ef = ctx.obj.get(efield)
     ipos = ctx.obj.get(position)
     ivel= ctx.obj.get(velocities)
     pos, vel = pochoir.pathfinder.solve(ipos, ivel, barr, ef, time, step)
-    params = dict(operation="pathfider", boundary=boundary,efield=efield,position=position,velocity=velocity,step=step,time=time)
+    params = dict(operation="pathfider",
+                  boundary=boundary, efield=efield, position=position,
+                  velocity=velocity, step=step,time=time)
     ctx.obj.put(solutionp, pos, result="solutionp", **params)
     ctx.obj.put(solutionv, vel, result="solutionv", **params)
 
