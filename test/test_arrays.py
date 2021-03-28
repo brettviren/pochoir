@@ -1,5 +1,12 @@
 import numpy
-from pochoir.arrays import core1, pad1
+from pochoir.arrays import core1, pad1, fromstr1
+
+def test_fromstr1():
+
+    fff = fromstr1("15 * cm, 150, 150*mm, 150.0", float)
+    assert all([f==150.0 for f in fff])
+    iii = fromstr1("15 * cm, 150, 150*mm, 150.0", int)
+    assert all([i==150 for i in iii])
 
 def test_core1():
     a = numpy.array(range(12)).reshape((3,4))

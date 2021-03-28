@@ -6,7 +6,10 @@ from . import geom
 from . import gen
 from . import fdm
 from . import domain
+from . import units
+from . import lar
 from . import plots
+from . import drift
 from . import vtkexport
 from . import pathfinder
 

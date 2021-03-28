@@ -70,8 +70,12 @@ def ls(ctx, things):
             for dirname in dirs:
                 print(f'{dirname}/')
             for arrname in arrs:
-                arr = ctx.obj.get(thing + "/" + arrname)
-                print (f'{type(arr)} {arr.shape} {arrname}')
+                if thing == "/":
+                    lookfor = arrname
+                else:
+                    lookfor = thing + "/" + arrname
+                arr = ctx.obj.get(lookfor)
+                print (f'{lookfor} {arr.dtype} {arr.shape}')
             return
         # dataset or md, for now, assume the former
         print (f'{type(got)} {got.shape} {thing}')
@@ -107,6 +111,32 @@ def gen(ctx, domain, generator, initial, boundary, configs):
 @cli.command()
 @click.option("-d", "--domain", type=str, default=None,
               help="Use named dataset for the domain, (def: indices)")
+@click.option("-r", "--result", type=str,
+              help="Name the storage result")
+@click.option("-t", "--temperature", type=str, default="89*K",
+              help="Temperature")
+@click.argument("potential")
+@click.pass_context
+def velo(ctx, domain, result, temperature, potential):
+    '''
+    Calculate a velocity field from a potential field
+    '''
+    temp = pochoir.arrays.fromstr1(temperature)[0]
+    pot = ctx.obj.get(potential)
+    dom = ctx.obj.get_domain(domain)
+
+    efield = pochoir.arrays.gradient(pot, dom.spacing)
+    emag = pochoir.arrays.vmag(efield)
+    mu = pochoir.lar.mobility(emag, temp)
+    velocity = [e*mu for e in efield]
+    params = dict(domain=domain, result="velo", temperature=temp)
+    ctx.obj.put(result, velocity, **params)
+
+
+
+@cli.command()
+@click.option("-d", "--domain", type=str, default=None,
+              help="Use named dataset for the domain, (def: indices)")
 @click.argument("scalar")
 @click.argument("vector")
 @click.pass_context
@@ -125,11 +155,11 @@ def grad(ctx, domain, scalar, vector):
 
 
 @cli.command()
-@click.option("-s","--shape", default=None, type=str,
+@click.option("-s","--shape", type=str, required=True,
               help="The number of grid points in each dimension")
 @click.option("-o","--origin", default=None, type=str,
               help="The spatial location of zero index grid point (def=0's)")
-@click.option("-s","--spacing", default=None, type=str,
+@click.option("-S","--spacing", default=None, type=str,
               help="The grid spacing as scalar or vector (def=1's)")
 @click.argument("name")
 @click.pass_context
@@ -144,13 +174,22 @@ def domain(ctx, shape, origin, spacing, name):
           points in each dimension.  Required.
 
         - origin :: an N-D spatial vector identifying the location of
-          the grid point with all indices zero.
+          the grid point with all indices zero.  These may use spatial
+          units.
 
         - spacing :: a scalar or N-D vector in same distance units as
           used in origin and which gives a common or a per-dimension
-          spacing between neighboring grid points.
+          spacing between neighboring grid points.  This may use
+          spatial units.
 
     A vector is given as a comma-separated list of numbers.
+
+    Spatial units are applied by multiplying a unit symbol such as
+
+    - 10*mm
+    - 2.4*cm
+
+    If no spatial unit is given, mm is assumed.
 
     Note: this description corresponds to vtk/paraview uniform
     rectilinear grid, aka an "image".
@@ -159,10 +198,11 @@ def domain(ctx, shape, origin, spacing, name):
     ndim = shape.size
 
     if spacing:
+        val = pochoir.arrays.fromstr1(spacing)
         if "," in spacing:
-            spacing = pochoir.arrays.fromstr1(spacing)
+            spacing = val
         else:
-            spacing = pochoir.arrays.zeros(ndim) + float(spacing)
+            spacing = pochoir.arrays.zeros(ndim) + val[0]
     else:
         spacing = pochoir.arrays.ones(ndim)
 
@@ -175,6 +215,68 @@ def domain(ctx, shape, origin, spacing, name):
     ctx.obj.put_domain(name, dom)
 
     
+@cli.command()
+@click.option("-d","--domain", default=None, type=str,
+              help="Use domain for the plot")
+@click.option("-s","--starts", default=None, type=str,
+              help="Name the starts array to store")
+@click.argument("points", nargs=-1)
+@click.pass_context
+def starts(ctx, domain, starts, points):
+    '''
+    Define drift path start points as N-d comma-separated vectors
+    '''
+    dom = ctx.obj.get_domain(domain)
+    shape = (len(points), len(dom.shape))
+    arr = pochoir.arrays.zeros(shape)
+    for ind, spoint in enumerate(points):
+        pt = pochoir.arrays.fromstr1(spoint)
+        arr[ind] = pt
+
+    ctx.obj.put(starts, arr, result="starts", domain=domain)
+
+
+@cli.command()
+@click.option("-r", "--result", type=str,
+              help="Name the storage result")
+@click.option("-s", "--steps", type=str,
+              help="Give start,stop,step")
+@click.option("-d","--domain", default=None, type=str,
+              help="Use domain for the plot")
+@click.option("-e","--engine", type=click.Choice(["scipy","torch"]),
+              default="torch",
+              help="Name the solver engine")
+@click.argument("starts")
+@click.argument("velocity")
+@click.pass_context
+def drift(ctx, result, steps, domain, engine, starts, velocity):
+    '''
+    Calculate drift paths.
+    '''
+    start, stop, step = pochoir.arrays.fromstr1(steps)
+    nsteps = int((stop-start)/step)
+
+    ticks = pochoir.arrays.linspace(start, stop, nsteps,
+                                    endpoint=False)
+
+    drifter = getattr(pochoir.drift, engine)
+    dom = ctx.obj.get_domain(domain)
+    velo = ctx.obj.get(velocity)
+    velo = [v/s for v,s in zip(velo, dom.spacing)]
+
+    start_points = ctx.obj.get(starts)
+
+    paths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
+    for ind, point in enumerate(start_points):
+        path = drifter(dom, point, velo, ticks)
+        print(f'point: {point}, {path.shape}')
+        paths[ind] = path.cpu().numpy()
+
+    params=dict(result="drift", domain=domain,
+                engine=engine, steps=steps)
+    ctx.obj.put(result, paths, **params)
+    
+
 @cli.command()
 @click.option("-i","--initial", type=str,
               help="Name initial value array")
@@ -238,6 +340,7 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
                 geom=fnames, domain=domain)
     ctx.obj.put(boundary, barr, result="boundary",
                 geom=fnames, domain=domain)
+
 
 @cli.command()
 @click.option("-i","--initial", type=str,

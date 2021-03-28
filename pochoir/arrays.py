@@ -3,6 +3,8 @@
 Low-level functions for arrays.  
 '''
 
+from . import units
+
 # Ideally, this is only module to import these two:
 import numpy
 import torch
@@ -27,8 +29,10 @@ def module(array):
 def fromstr1(string, dtype=float):
     '''
     Parse string as 1d list of numbers, return array
+
+    Numbers may have unit names multiplied
     '''
-    s = [dtype(s.strip()) for s in string.split(",") if s.strip()]
+    s = [dtype(eval(s.strip(), units.__dict__)) for s in string.split(",") if s.strip()]
     return to_numpy(s)
 
 
@@ -67,6 +71,18 @@ def gradient(array, spacing = None):
     g = numpy.array(gvec)
     return torch.tensor(g, device=array.device)
     
+def vmag(vfield):
+    '''
+    Return magnitude of vector field as scalar field.
+
+    The vfield is an N-list of N-d arrays, each giving one dimension's component.
+    '''
+    c2s = [c*c for c in vfield]
+    tot = numpy.zeros_like(c2s[0])
+    for c2 in c2s:
+        tot += c2
+    return numpy.sqrt(tot)
+
 
 def dup(array):
     '''
