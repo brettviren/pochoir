@@ -1,41 +1,117 @@
+#!/usr/bin/env snakemake
+'''
+There are:
+- 1->many config files generated from tutorial.jsonnet, 
+- each config in a category subdir cfg/<cat>s/<item>.json
+- cat in [dom,gen]
+
+'''
+
 import json
 
-DOMAINS = ["wfar",]
+DOMS = ["wfar",]
+GENS = ["sandh",]
+CATS = {"doms":DOMS,"gens":GENS}
 
-dom_cfg_dir = "cfg/domains"
+cfg_dir = "cfg"
+store_dir = "store"
 
-rule gengeomcfg:
-    input:
-        "{geom}.jsonnet"
-    output:
-        "geomcfg/{geom}.json"
-    shell:
-        "jsonnet -o {output} {input}"
+def cfgdir(cats):
+    return f'{cfg_dir}/{cats}'
+def cfgfile(cats, name):
+    return cfgdir(cats) + f'/{name}.json'
+def stofile(cats, name):
+    return f'{store_dir}/{cats}/{name}.npz'
 
-        
-rule gencfg:
+rule cfgs:
     input:
         "tutorial.jsonnet"
     output:
-        expand(dom_cfg_dir + "/{domain}.json", domain=DOMAINS)
+        doms = [cfgfile("doms", d) for d in DOMS],
+        gens = [cfgfile("gens", d) for d in GENS]
+    params:
+        odirs = [cfgdir(c) for c in CATS]
     shell:
-        "jsonnet -m cfg {input}"
+        "mkdir -p {params.odirs}; jsonnet -m cfg {input}"
 
-def load_domain_cfg(w):
-    ret = json.load(open(f'{dom_cfg_dir}/{w.domain}.json'))
-    ret.update(store="store")
-    print("DOMAIN:",ret)
-    return ret 
+def dom_key(w=None):
+    if w:
+        dom = w.dom
+    else:
+        dom = '{dom}'           # unformatted
+    return 'doms/'+dom
+
+def dom_files(w=None):
+    if w:
+        dom = w.dom
+    else:
+        dom = '{dom}'           # unformatted
+    dk = dom_key(w)
+    base = f'{store_dir}/{dk}/'
+    df = [base + kind + ".npz" for kind in ["origin", "shape", "spacing"]]
+    print(df)
+    return df
+
+def dom_cfg(w):
+    cfg = json.load(open(cfgfile("doms", w.dom)))
+    cfg["key"] = dom_key(w)
+    cfg["store"] = store_dir
+    return cfg
 
 rule domain:
     input:
-        cfgfile = dom_cfg_dir + "/{domain}.json"
+        cfgfile = cfgfile("doms", "{dom}")
     output:
-        outdir = directory("store/domains/{domain}"),
+        outfiles = dom_files()
     params:
-        dom = load_domain_cfg
-    shell:
-        "pochoir -s {params.dom[store]} domain"
-        "  --shape {params.dom[shape]}"
-        "  --spacing {params.dom[spacing]}"
-        "  domains/{wildcards.domain}"
+        cfg = dom_cfg
+    shell: """
+    pochoir -s {params.cfg[store]} domain \
+      --shape {params.cfg[shape]} \
+      --spacing {params.cfg[spacing]} \
+                {params.cfg[key]}
+    """
+
+
+def iva_key(w=None):
+    if w:
+        return f"iva/{w.gen}-{w.dom}"
+    else:
+        return "iva/{gen}-{dom}"
+def bva_key(w=None):
+    if w:
+        return f"bva/{w.gen}-{w.dom}"
+    else:
+        return "bva/{gen}-{dom}"
+
+def gen_files(w=None):
+    ik = iva_key(w)
+    bk = bva_key(w)
+    return [f'{store_dir}/{ik}.npz',
+            f'{store_dir}/{bk}.npz']
+
+def gen_cfg(w):
+    cfg = dict(store = store_dir,
+               iva_key = iva_key(w),
+               bva_key = bva_key(w),
+               dom_key = dom_key(w))
+    return cfg
+
+rule gen:
+    input:
+        domsfiles = dom_files,
+        cfgf = cfgfile("gens", "{gen}")
+    params:
+        cfg = gen_cfg
+    output:
+        outs = gen_files()        
+    shell: """
+    pochoir -s {params.cfg[store]} gen -d {params.cfg[dom_key]} \
+      -i {params.cfg[iva_key]} -b {params.cfg[bva_key]} -g {wildcards.gen} \
+      {input.cfgf}
+    """
+    
+rule all:
+    input:
+        iva=f'{store_dir}/iva/sandh-wfar.npz',
+        bva=f'{store_dir}/bva/sandh-wfar.npz'

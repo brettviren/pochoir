@@ -88,7 +88,7 @@ def ls(ctx, things):
               help="Name initial value array")
 @click.option("-b","--boundary", type=str,
               help="Name the boundary array")
-@click.option("-g","--generator", type=str,
+@click.option("-g","--generator", type=str, default=None,
               help="Name the generator module")
 @click.argument("configs", nargs=-1)
 @click.pass_context
@@ -96,6 +96,14 @@ def gen(ctx, domain, generator, initial, boundary, configs):
     '''
     Generate initial and boundary value arrays from a high-level generator.
     '''
+    if generator is None:
+        print("available geometry generators:")
+        for one in pochoir.gen.__dict__:
+            if one[0] == "_":
+                continue
+            print('\t'+one)
+        return
+
     cfg = dict()
     for config in configs:
         cfg.update(json.loads(open(config,'rb').read().decode()))
