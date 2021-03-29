@@ -1,1 +1,1 @@
-https://github.com/sbarratt/torch_interpolations.git@91f0c9127dd20747daade34e96747426e2183fbf#egg=torch_interpolations
+git+https://github.com/sbarratt/torch_interpolations.git@91f0c9127dd20747daade34e96747426e2183fbf#egg=torch_interpolations
