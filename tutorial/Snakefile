@@ -23,6 +23,9 @@ def cfgfile(cats, name):
 def stofile(cats, name):
     return f'{store_dir}/{cats}/{name}.npz'
 
+dom_cfg_p = f"{cfg_dir}/doms/{{dom}}.json"
+gen_cfg_p = f"{cfg_dir}/gens/{{gen}}.json"
+
 rule cfgs:
     input:
         "tutorial.jsonnet"
@@ -34,80 +37,45 @@ rule cfgs:
     shell:
         "mkdir -p {params.odirs}; jsonnet -m cfg {input}"
 
-def dom_key(w=None):
-    if w:
-        dom = w.dom
-    else:
-        dom = '{dom}'           # unformatted
-    return 'doms/'+dom
-
-def dom_files(w=None):
-    if w:
-        dom = w.dom
-    else:
-        dom = '{dom}'           # unformatted
-    dk = dom_key(w)
-    base = f'{store_dir}/{dk}/'
-    df = [base + kind + ".npz" for kind in ["origin", "shape", "spacing"]]
-    print(df)
-    return df
+dom_key_p = "doms/{dom}"
+dom_origin_p = f"{store_dir}/{dom_key_p}/origin.npz"
+dom_shape_p = f"{store_dir}/{dom_key_p}/shape.npz"
+dom_spacing_p = f"{store_dir}/{dom_key_p}/spacing.npz"
+dom_files_p = [dom_origin_p, dom_shape_p, dom_spacing_p]
 
 def dom_cfg(w):
-    cfg = json.load(open(cfgfile("doms", w.dom)))
-    cfg["key"] = dom_key(w)
-    cfg["store"] = store_dir
-    return cfg
+    return json.load(open(cfgfile("doms", w.dom)))
 
 rule domain:
     input:
-        cfgfile = cfgfile("doms", "{dom}")
+        cfgfile = dom_cfg_p
     output:
-        outfiles = dom_files()
+        outfiles = dom_files_p
     params:
-        cfg = dom_cfg
-    shell: """
-    pochoir -s {params.cfg[store]} domain \
-      --shape {params.cfg[shape]} \
-      --spacing {params.cfg[spacing]} \
-                {params.cfg[key]}
-    """
+        cfg = dom_cfg,
+        key = dom_key_p
+    shell: """pochoir -s {store_dir} domain \
+    --shape {params.cfg[shape]} \
+    --spacing {params.cfg[spacing]} {params.key}"""
 
+iva_key_p = "iva/{gen}-{dom}"
+bva_key_p = "bva/{gen}-{dom}"
 
-def iva_key(w=None):
-    if w:
-        return f"iva/{w.gen}-{w.dom}"
-    else:
-        return "iva/{gen}-{dom}"
-def bva_key(w=None):
-    if w:
-        return f"bva/{w.gen}-{w.dom}"
-    else:
-        return "bva/{gen}-{dom}"
-
-def gen_files(w=None):
-    ik = iva_key(w)
-    bk = bva_key(w)
-    return [f'{store_dir}/{ik}.npz',
-            f'{store_dir}/{bk}.npz']
-
-def gen_cfg(w):
-    cfg = dict(store = store_dir,
-               iva_key = iva_key(w),
-               bva_key = bva_key(w),
-               dom_key = dom_key(w))
-    return cfg
 
 rule gen:
     input:
-        domsfiles = dom_files,
+        rules.domain.output.outfiles,
         cfgf = cfgfile("gens", "{gen}")
     params:
-        cfg = gen_cfg
+        iva_key = iva_key_p,
+        bva_key = bva_key_p,
+        dom_key = dom_key_p
     output:
-        outs = gen_files()        
+        iva = f"{store_dir}/{iva_key_p}.npz",
+        bva = f"{store_dir}/{bva_key_p}.npz"
     shell: """
-    pochoir -s {params.cfg[store]} gen -d {params.cfg[dom_key]} \
-      -i {params.cfg[iva_key]} -b {params.cfg[bva_key]} -g {wildcards.gen} \
+    pochoir -s {store_dir} gen -d {params.dom_key} \
+      -i {params.iva_key} -b {params.bva_key} -g {wildcards.gen} \
       {input.cfgf}
     """
     
