@@ -115,23 +115,23 @@ def draw_pcb_plane(shape,arr,z,r1,r2,free,val):
         id_circ2_m=mirror_center(id_circ2,shape[0]-1,shape[1]-1)
         barr1=form_quarter_boundary(id_circ1,0,0)
         barr2=form_quarter_boundary(id_circ2_m,shape[0]-1,shape[1])
-        fill_area(arr,barr1,0)
-        fill_area(arr,barr2,0)
+        fill_area(arr,barr1,val[0])
+        fill_area(arr,barr2,val[0])
 
 def draw_3D_pcb(arr,shape,r1,r2,v_cath,v_pcb,v_an,pcb_width):
     volt = (v_cath,v_pcb)
-    for z in range(shape[2]-1):
+    for z in range(shape[2]-1)[1:]:
         if z<pcb_width:
-            draw_pcb_plane(shape,arr,z,r1,r2,0,volt)
+            draw_pcb_plane(shape,arr,z,r1,r2,0,(0,v_pcb))
         else:
-            draw_pcb_plane(shape,arr,z,r1,r2,1,volt)
+            draw_pcb_plane(shape,arr,z,r1,r2,1,(0,0))
+    draw_pcb_plane(shape,arr,0,r1,r2,0,(v_cath,v_pcb))
     draw_pcb_plane(shape,arr,shape[2]-1,r1,r2,1,(v_an,0))
 
 def generator(dom, cfg):
-    shape=(len(dom[0]),len(dom[0][0]),len(dom[0][0][0]))
-    arr = numpy.zeros(shape)
-    barr = numpy.ones(shape)
-    draw_3D_pcb(arr,shape,41,41,2000,-1,-15000,10)
+    arr = numpy.zeros(dom.shape)
+    barr = numpy.ones(dom.shape)
+    draw_3D_pcb(arr,dom.shape,41,41,2000,-1,-15000,10)
     barr[arr == 0] = 0
-
+    
     return arr,barr
