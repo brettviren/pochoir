@@ -15,7 +15,7 @@ def image(arr, fname, domain, title=""):
 
     arr = arrays.to_numpy(arr)
     plt.clf()
-    #plt.title("initial")
+
     extent = None
     if domain:
         extent = domain.imshow_extent()
@@ -23,6 +23,7 @@ def image(arr, fname, domain, title=""):
     plt.imshow(arr, interpolation='none', aspect='auto',
                extent = extent)
     plt.colorbar()
+
     plt.savefig(fname)
 
 def quiver(varr, fname, domain):

@@ -33,9 +33,15 @@ def version():
 
 
 @cli.command()
+@click.option("-d", "--domain", type=str, 
+              help="Use named dataset for the domain, (def: indices)")
+@click.option("-i","--initial", type=str,
+              help="Name initial value array")
+@click.option("-b","--boundary", type=str,
+              help="Name the boundary array")
 @click.argument("name")
 @click.pass_context
-def example(ctx, name):
+def example(ctx, domain, initial, boundary, name):
     '''
     Generate a boundary and initial array example (try "list")
     '''
@@ -47,9 +53,13 @@ def example(ctx, name):
 
     meth = getattr(pochoir.examples, "ex_" + name)
 
-    iarr, barr = meth()
-    ctx.obj.put(f'{name}-initial', iarr)
-    ctx.obj.put(f'{name}-boundary', barr)
+    dom = None
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+
+    iarr, barr = meth(dom)
+    ctx.obj.put(initial, iarr)
+    ctx.obj.put(boundary, barr)
     
 
 @cli.command()

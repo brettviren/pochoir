@@ -41,17 +41,17 @@ class Domain:
 
     def point(self, index):
         '''
-        Given the spatial point at the index.
+        Given an index into the array as a array-like return spatial point as array.
         '''
         index = numpy.array(index)
         return self.origin + index * self.spacing
 
     def index(self, point):
         '''
-        Given a point, return nearest index
+        Given a point as an array-like, return nearest index as tuple.
         '''
         point = numpy.array(point)
-        return numpy.array(numpy.round((point - self.origin)/self.spacing), dtype=int)
+        return tuple(numpy.array(numpy.round((point - self.origin)/self.spacing), dtype=int))
 
 
     def crop(self, slc, axis):

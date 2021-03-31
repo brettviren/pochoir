@@ -30,7 +30,7 @@ def rectangle(dom, arr, value, point1, point2):
     point2 = dom.index(point2)
 
     s = [dom.crop(slice(point1[a], point2[a]), axis=a) for a in [0,1]]
-    print (f'rectangle: {point1}->{point2}: {value} -> {s}')
+    #print (f'rectangle: {point1}->{point2}: {value} -> {s}')
     arr[tuple(s)] = value
 
 

@@ -1,6 +1,37 @@
+#!/usr/bin/env python3
+'''
+This provides a grab bag of functions that build example
+initial/boundary value arrays.
+'''
+
 import numpy
 
-def ex_sandh():
+def ex_dipole(dom):
+    '''
+    Produce a dipole problem
+    '''
+    bb = dom.bb
+    print(bb, dom.shape)
+    d = bb[1] - bb[0]
+    p1 = 0.1*d + bb[0]
+    p2 = 0.9*d + bb[0]
+
+    ind1 = tuple(dom.index(p1))
+    ind2 = tuple(dom.index(p2))
+    print(p1,ind1)
+    print(p2,ind2)
+
+    iva = numpy.zeros(dom.shape, dtype=float)
+    bva = numpy.zeros(dom.shape, dtype=bool)
+
+    iva[ind1] = 100
+    iva[ind2] = -100    
+    bva[ind1] = True
+    bva[ind2] = True    
+
+    return iva, bva
+
+def ex_sandh(dom=None):
     '''
     A strip+hole 3D example
     '''
@@ -57,7 +88,7 @@ def ex_sandh():
     return arr,barr
 
 
-def ex_caps():
+def ex_caps(dom=None):
     '''
     Kind of a spiral of capacitors
     '''
