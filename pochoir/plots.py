@@ -3,11 +3,16 @@
 Make plots.
 '''
 from . import arrays
-
-# restrict imports to numpy + matplotlib.  No domain operations!
+from pathlib import Path
 import numpy
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+
+def savefig(fname):
+    path = Path(fname)
+    if not path.parent.exists():
+        path.parent.mkdir(parents=True)
+    plt.savefig(path.resolve())
 
 def image(arr, fname, domain, title=""):
     if len(arr.shape) != 2:
@@ -24,7 +29,7 @@ def image(arr, fname, domain, title=""):
                extent = extent)
     plt.colorbar()
 
-    plt.savefig(fname)
+    savefig(fname)
 
 def quiver(varr, fname, domain):
     varr = [arrays.to_numpy(a) for a in varr]
@@ -45,4 +50,4 @@ def quiver(varr, fname, domain):
         ax.quiver(mg[0], mg[1], mg[2],
                   varr[0], varr[1], varr[2],
                   length=domain.spacing[0], normalize=True)
-    plt.savefig(fname)
+    savefig(fname)

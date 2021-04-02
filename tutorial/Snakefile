@@ -66,10 +66,9 @@ dom_files_p = [dom_origin_p, dom_shape_p, dom_spacing_p]
 def dom_cfg(w):
     return json.load(open(cfgfile("doms", w.dom)))
 
-dom_cfg_p = f"{cfg_dir}/doms/{{dom}}.json"
 rule domain:
     input:
-        cfgfile = dom_cfg_p
+        cfgfile = f"{cfg_dir}/doms/{{dom}}.json"
     output:
         outfiles = dom_files_p
     params:
@@ -135,7 +134,7 @@ rule ivaplot:
         bva = f"{store_dir}/{bva_key_p}.npz"
     output:
         iva = f"{plot_dir}/{iva_key_p}.png",
-        bva = f"{plot_dir}/{bva_key_p}.npg"
+        bva = f"{plot_dir}/{bva_key_p}.png"
     params:
         iva_key = iva_key_p,
         bva_key = bva_key_p,
@@ -160,8 +159,9 @@ rule fdm:
         err = f"{store_dir}/{err_key_p}.npz"
     params:
         bc = lambda w: bcs[w.cfg], 
-        nepochs = 1,
+        nepochs = 100,
         epoch = 100,
+        precision = 0.01,
         iva_key = iva_key_p,
         bva_key = bva_key_p,
         sol_key = sol_key_p,
@@ -172,18 +172,55 @@ rule fdm:
       --edges {params.bc} \
       --initial {params.iva_key} \
       --boundary {params.bva_key} \
+      --precision {params.precision} \
       --epoch {params.epoch} \
       --nepochs {params.nepochs} \
       {params.sol_key} {params.err_key}
-
     """
     
-rule plots:
+rule fdmplot:
     input:
-        ivas = expand(rules.ivaplot.output.iva,
-                      cfg=EXAS+GENS, dom=DOMS),
+        rules.fdm.output
+    output:
+        sol = f"{plot_dir}/{sol_key_p}.png",
+        err = f"{plot_dir}/{err_key_p}.png"
+    params:
+        dom_key = dom_key_p,
+        sol_key = sol_key_p,
+        err_key = err_key_p
+    shell: """
+    pochoir -s {store_dir} plot-image \
+      -d {params.dom_key} {params.sol_key} {output.sol}
+    pochoir -s {store_dir} plot-image \
+      -d {params.dom_key} {params.err_key} {output.err}
+    """
+
+velo_key_p = "velos/{cfg}-{dom}"
+rule velo:
+    input:
+        rules.domain.output.outfiles,
+        rules.fdm.output.sol
+    output:
+        f"{store_dir}/{velo_key_p}.npz"
+    params:
+        sol_key = sol_key_p,
+        dom_key = dom_key_p,
+        velo_key = velo_key_p,
+        temperature = "89*K"
+    shell: """
+    pochoir -s {store_dir} velo \
+      --domain {params.dom_key} \
+      --temperature {params.temperature} \
+      --result {params.velo_key} \
+      {params.sol_key}
+    """
+
+rule all_velo:
+    input:
+        expand(rules.velo.output, cfg=EXAS+GENS, dom=DOMS)
 
 rule all:
     input:
-        sols = expand(rules.fdm.output.sol,
-                      cfg=EXAS, dom=DOMS)
+        expand(rules.ivaplot.output.iva, cfg=EXAS+GENS, dom=DOMS),
+        expand(rules.fdmplot.output.sol, cfg=EXAS+GENS, dom=DOMS),
+        expand(rules.fdm.output.sol, cfg=EXAS+GENS, dom=DOMS)
