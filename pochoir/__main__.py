@@ -286,6 +286,7 @@ def drift(ctx, result, steps, domain, engine, starts, velocity):
 
     paths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
     for ind, point in enumerate(start_points):
+        print (f'path {ind} {point}')
         path = drifter(dom, point, velo, ticks)
         print(f'point: {point}, {path.shape}')
         if engine=="torch":

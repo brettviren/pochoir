@@ -36,8 +36,10 @@ class Domain:
         '''
         A pair of vectors giving opposite corners of the box bounding the domain.
         '''
-        return [self.point([0]*len(self.shape)),
-                self.point(self.shape-1)]
+        ndim = len(self.shape)
+        beg = tuple([0]*ndim)
+        end = tuple(numpy.array(self.shape)-1)
+        return [self.point(beg), self.point(end)]
 
     def point(self, index):
         '''

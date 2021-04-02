@@ -19,8 +19,11 @@ class Simple:
         '''
         The vfield give vector feild on domain.
         '''
+        shape = torch.tensor(domain.shape)
+        spacing = torch.tensor(domain.spacing)
+        origin = torch.tensor(domain.origin)
         points = list()
-        for num, spacing, origin in zip(domain.shape, domain.spacing, domain.origin):
+        for num, spacing, origin in zip(shape, spacing, origin):
             start = origin 
             stop  = origin + num * spacing
             points.append(torch.arange(start, stop, spacing))
@@ -38,7 +41,7 @@ class Simple:
         velo = torch.zeros_like(tpoint)
 
         point = [torch.tensor([t]) for t in tpoint]
-
+        print(point)
         for ind, inter in enumerate(self.interp):
             velo[ind] = inter(point)[0]
         
@@ -50,9 +53,9 @@ def solve(domain, start, velocity, times):
     Return the path of points at times from start through velocity field.
     '''
     start = to_torch(start)
-    velocity = to_torch(velocity)
+    velocity = [to_torch(v) for v in velocity]
     times = to_torch(times)
-    print(times.shape)
     func = Simple(domain, velocity)
+    print(f"starting path at {start}")
     return odeint(func, start, times)
     

@@ -1,0 +1,13 @@
+#+title A pochoir tutorial
+
+* notes
+
+#+begin_src python
+  times = torch.arange(0,100,.1)
+start = torch.tensor((0.,0.))
+#+end_src
+
+#+begin_center
+pochoir -s store starts -d doms/wfar -s starts/junk 0,0
+pochoir -s store drift -d doms/wfar -r paths/junk -e torch -s 0,10,0.1 starts/junk velos/dipole-wfar
+#+end_center
