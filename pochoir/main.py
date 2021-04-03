@@ -14,6 +14,8 @@ from . import persist
 from . import arrays
 from . domain import Domain
 
+from pathlib import Path
+
 class Main:
     '''
     Main entry point (almost) to pochoir.  
@@ -31,7 +33,7 @@ class Main:
             - outstore gives file name providing output storage.  If
               given the input store is made readonly.
         '''
-        self.instore_name = instore
+        self.instore_path = Path(instore).resolve()
         if outstore is None:
             self.instore = persist.store(instore, 'a')
             self.outstore = self.instore
@@ -40,10 +42,23 @@ class Main:
             self.outstore = persist.store(outstore, 'w')
         self.device = device
 
+    @property
+    def instore_name(self):
+        return str(self.instore_path)
+
+    def key(self, fname):
+        p = Path(fname).resolve()
+        try:
+            got = p.relative_to(self.instore_path)
+        except ValueError:
+            return fname        # assume already a key
+        return str(got.with_suffix(""))
+
     def get(self, key):
         '''
         Return in input array at key.
         '''
+        key = self.key(key)
         return self.instore.get(key)
 
     def get_domain(self, key):
@@ -72,5 +87,6 @@ class Main:
         '''
         Save an array to key in output store.
         '''
+        key = self.key(key)
         return self.outstore.put(key, array, **metadata)
 
