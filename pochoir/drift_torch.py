@@ -23,14 +23,19 @@ class Simple:
         spacing = torch.tensor(domain.spacing)
         origin = torch.tensor(domain.origin)
         points = list()
-        for num, spacing, origin in zip(shape, spacing, origin):
-            start = origin 
-            stop  = origin + num * spacing
-            points.append(torch.arange(start, stop, spacing))
-            
+
+        self.calls = 0
+
+        for dim in range(len(domain.shape)):
+            start = origin[dim]
+            stop  = origin[dim] + shape[dim] * spacing[dim]
+            rang = torch.arange(start, stop, spacing[dim])
+            #print ("interp dim:",dim,rang.shape,vfield[dim].shape)
+            points.append(rang)
+
         self.interp = [
-            ti.RegularGridInterpolator(points, coord)
-            for coord in vfield]
+            ti.RegularGridInterpolator(points, component)
+            for component in vfield]
 
     def __call__(self, tick, tpoint):
         '''
@@ -39,12 +44,13 @@ class Simple:
         Location is given as an index (but floating point) vector.
         '''
         velo = torch.zeros_like(tpoint)
-
-        point = [torch.tensor([t]) for t in tpoint]
-        print(point)
+        xy = [t.reshape(-1) for t in tpoint]
         for ind, inter in enumerate(self.interp):
-            velo[ind] = inter(point)[0]
+            got = inter(xy)
+            velo[ind] = got
         
+        #print("interp",tpoint.numpy().tolist(),velo.numpy().tolist())
+        self.calls += 1
         return velo
 
 
@@ -57,5 +63,6 @@ def solve(domain, start, velocity, times):
     times = to_torch(times)
     func = Simple(domain, velocity)
     print(f"starting path at {start}")
-    return odeint(func, start, times)
-    
+    res = odeint(func, start, times, rtol=0.01, atol=0.01)
+    print(f"function called {func.calls} times")
+    return res

@@ -4,16 +4,16 @@ import pochoir
 
 
 def test_dipole():
-    dom = pochoir.domain.Domain((1000,1000), 0.1)
+    dom = pochoir.domain.Domain((100,100), 0.1)
     print("DOMAIN:",dom)
 
     iva, bva = pochoir.examples.ex_dipole(dom)
     print("IVA/BVA:",iva, bva)
 
     edge_cond = (True, True)
-    precision = 0.1
+    precision = 0.001
     epoch = 100
-    nepochs = 10
+    nepochs = 100
     pot, pot_err = pochoir.fdm.solve(iva, bva, edge_cond,
                                      precision, epoch, nepochs)
     
@@ -25,7 +25,11 @@ def test_dipole():
     velo = [e*mu for e in efield]
 
 
-    start = (12.,12.)
-    times = numpy.arange(0,10,.1)
-    path = pochoir.drift_torch.solve(dom, start, velo, times)
-    print (path)
+    times = numpy.arange(0.0,10.0,0.1)
+    paths = list()
+    for p in numpy.arange(0.,10.,1.):
+        start = (p,p)
+        print("start:",start)
+        path = pochoir.drift_torch.solve(dom, start, velo, times)
+        paths.append(path.numpy())
+    numpy.savez("test_dipole.npz", paths)
