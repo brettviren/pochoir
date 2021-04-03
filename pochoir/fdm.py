@@ -112,7 +112,7 @@ def solve(iarr, barr, periodic, prec, epoch, nepochs):
             if epoch-istep == 1: # last in the epoch
                 err = iarr[core] - prev
                 maxerr = amod.max(amod.abs(err))
-                print(f'maxerr: {maxerr}')
+                #print(f'maxerr: {maxerr}')
                 if prec and maxerr < prec:
                     return (iarr[core], err)
 
