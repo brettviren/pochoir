@@ -34,49 +34,54 @@ CONFIGURED = {"doms":DOMS,"gens":GENS}
 cfg_dir = "configs"
 store_dir = "store"
 plot_dir = "plots"
-
-def cfgdir(cats):
-    return f'{cfg_dir}/{cats}'
-def cfgfile(cats, name):
-    return cfgdir(cats) + f'/{name}.json'
-def stofile(cats, name):
-    return f'{store_dir}/{cats}/{name}.npz'
-
 gen_cfg_p = f"{cfg_dir}/gens/{{cfg}}.json"
 
-rule cfgs:
+rule configs:
     input:
         "tutorial.jsonnet"
     output:
-        doms = [cfgfile("doms", d) for d in DOMS],
-        gens = [cfgfile("gens", d) for d in GENS]
+        doms = expand(f'{cfg_dir}/doms/{{dom}}.json', dom=DOMS),
+        gens = expand(f'{cfg_dir}/gens/{{gen}}.json', gen=GENS)
     params:
-        odirs = [cfgdir(c) for c in CONFIGURED],
-    shell:
-        "mkdir -p {params.odirs}; jsonnet -m {cfg_dir} {input}"
+        odirs = expand(f'{cfg_dir}/{{cat}}',cat=["doms","gens"])
+    shell: """
+    mkdir -p {params.odirs}; 
+    jsonnet -m {cfg_dir} {input}
+    """
+
+rule all_configs:
+    input:
+        rules.configs.output
 
 dom_key_p = "doms/{dom}"
-dom_origin_p = f"{store_dir}/{dom_key_p}/origin.npz"
-dom_shape_p = f"{store_dir}/{dom_key_p}/shape.npz"
-dom_spacing_p = f"{store_dir}/{dom_key_p}/spacing.npz"
-dom_files_p = [dom_origin_p, dom_shape_p, dom_spacing_p]
+dom_files_p = [f"{store_dir}/{dom_key_p}/origin.npz",
+               f"{store_dir}/{dom_key_p}/shape.npz",
+               f"{store_dir}/{dom_key_p}/spacing.npz"]
 
 ## Make domains
 
 def dom_cfg(w):
-    return json.load(open(cfgfile("doms", w.dom)))
+    return json.load(open(f'{cfg_dir}/doms/{w.dom}.json'))
 
 rule domain:
     input:
         cfgfile = f"{cfg_dir}/doms/{{dom}}.json"
     output:
-        outfiles = dom_files_p
+        outfiles = dom_files_p,
+        outdir = directory(f"{store_dir}/{dom_key_p}")
     params:
         cfg = dom_cfg,
         key = dom_key_p
-    shell: """pochoir -s {store_dir} domain \
+    shell: """
+    pochoir -s {store_dir} domain \
     --shape {params.cfg[shape]} \
-    --spacing {params.cfg[spacing]} {params.key}"""
+    --spacing {params.cfg[spacing]} {output.outdir}
+    """
+
+rule all_domains:
+    input:
+        expand(rules.domain.output.outfiles, dom=DOMS)
+
 
 ## initial and boundary arryas.
 
@@ -90,68 +95,62 @@ bva_key_p = "bvas/{cfg}-{dom}"
 
 rule gen:
     input:
-        rules.domain.output.outfiles,
-        cfgf = cfgfile("gens", "{cfg}")
+        dom = rules.domain.output.outdir,
+        cfgf = f'{cfg_dir}/gens/{{cfg}}.json'
     output:
         iva = f"{store_dir}/{iva_key_p}.npz",
         bva = f"{store_dir}/{bva_key_p}.npz"
-    params:
-        iva_key = iva_key_p,
-        bva_key = bva_key_p,
-        dom_key = dom_key_p
     wildcard_constraints:
         cfg = isgen
     shell: """
     pochoir -s {store_dir} gen \
-      -d {params.dom_key} \
-      -i {params.iva_key} -b {params.bva_key} -g {wildcards.cfg} \
+      -d {input.dom} \
+      -i {output.iva} -b {output.bva} -g {wildcards.cfg} \
       {input.cfgf}
     """
+rule all_gen:
+    input: expand(rules.gen.output.iva, cfg=GENS, dom=DOMS)
 
 rule exa:
     input:
-        rules.domain.output.outfiles
+        dom = rules.domain.output.outdir
     output:
         iva = f"{store_dir}/{iva_key_p}.npz",
         bva = f"{store_dir}/{bva_key_p}.npz"
-    params:
-        iva_key = iva_key_p,
-        bva_key = bva_key_p,
-        dom_key = dom_key_p
     wildcard_constraints:
         cfg = isexa        
     shell: """
     pochoir -s {store_dir} example \
-      -d {params.dom_key} \
-      -i {params.iva_key} -b {params.bva_key} \
+      -d {input.dom} -i {output.iva} -b {output.bva} \
       {wildcards.cfg}
     """
+rule all_exa:
+    input: expand(rules.exa.output.iva, cfg=EXAS, dom=DOMS)
 
 rule ivaplot:
     input:
-        rules.domain.output.outfiles,
+        dom = rules.domain.output.outdir,
         iva = f"{store_dir}/{iva_key_p}.npz",
         bva = f"{store_dir}/{bva_key_p}.npz"
     output:
         iva = f"{plot_dir}/{iva_key_p}.png",
         bva = f"{plot_dir}/{bva_key_p}.png"
-    params:
-        iva_key = iva_key_p,
-        bva_key = bva_key_p,
-        dom_key = dom_key_p,
     shell: """
     pochoir -s {store_dir} plot-image \
-      -d {params.dom_key} {params.iva_key} {output.iva}
+      -d {input.dom} {input.iva} {output.iva}
     pochoir -s {store_dir} plot-image \
-      -d {params.dom_key} {params.bva_key} {output.bva}
+      -d {input.dom} {input.bva} {output.bva}
     """
+rule all_ivaplot:
+    input: expand(rules.ivaplot.output.iva, cfg=EXAS+GENS, dom=DOMS)
+
 
 sol_key_p = "sols/{cfg}-{dom}"
 err_key_p = "errs/{cfg}-{dom}"
 
 rule fdm:
     input:
-        rules.domain.output.outfiles,
+        dom = rules.domain.output.outdir,
         iva = f"{store_dir}/{iva_key_p}.npz",
         bva = f"{store_dir}/{bva_key_p}.npz"
     output:
@@ -162,44 +161,41 @@ rule fdm:
         nepochs = 100,
         epoch = 100,
         precision = 0.01,
-        iva_key = iva_key_p,
-        bva_key = bva_key_p,
-        sol_key = sol_key_p,
-        err_key = err_key_p
-
     shell: """
     pochoir -s {store_dir} fdm \
       --edges {params.bc} \
-      --initial {params.iva_key} \
-      --boundary {params.bva_key} \
+      --initial {input.iva} \
+      --boundary {input.bva} \
       --precision {params.precision} \
       --epoch {params.epoch} \
       --nepochs {params.nepochs} \
-      {params.sol_key} {params.err_key}
+      {output.sol} {output.err}
     """
+rule all_fdm:
+    input: expand(rules.fdm.output.sol, cfg=EXAS+GENS, dom=DOMS)
     
 rule fdmplot:
     input:
-        rules.fdm.output
+        dom = rules.domain.output.outdir,
+        sol = rules.fdm.output.sol,
+        err = rules.fdm.output.err
     output:
         sol = f"{plot_dir}/{sol_key_p}.png",
         err = f"{plot_dir}/{err_key_p}.png"
-    params:
-        dom_key = dom_key_p,
-        sol_key = sol_key_p,
-        err_key = err_key_p
     shell: """
     pochoir -s {store_dir} plot-image \
-      -d {params.dom_key} {params.sol_key} {output.sol}
+      -d {input.dom} {input.sol} {output.sol}
     pochoir -s {store_dir} plot-image \
-      -d {params.dom_key} {params.err_key} {output.err}
+      -d {input.dom} {input.err} {output.err}
     """
+rule all_fdmplot:
+    input: expand(rules.fdmplot.output.sol, cfg=EXAS+GENS, dom=DOMS)
 
 velo_key_p = "velos/{cfg}-{dom}"
 rule velo:
     input:
-        rules.domain.output.outfiles,
-        rules.fdm.output.sol
+        dom = rules.domain.output.outdir,
+        sol = rules.fdm.output.sol
     output:
         f"{store_dir}/{velo_key_p}.npz"
     params:
@@ -209,18 +205,22 @@ rule velo:
         temperature = "89*K"
     shell: """
     pochoir -s {store_dir} velo \
-      --domain {params.dom_key} \
+      --domain {input.dom} \
       --temperature {params.temperature} \
-      --result {params.velo_key} \
-      {params.sol_key}
+      --result {output} \
+      {input.sol}
     """
-
 rule all_velo:
     input:
         expand(rules.velo.output, cfg=EXAS+GENS, dom=DOMS)
 
 rule all:
     input:
-        expand(rules.ivaplot.output.iva, cfg=EXAS+GENS, dom=DOMS),
-        expand(rules.fdmplot.output.sol, cfg=EXAS+GENS, dom=DOMS),
-        expand(rules.fdm.output.sol, cfg=EXAS+GENS, dom=DOMS)
+        rules.all_configs.input,
+        rules.all_domains.input,
+        rules.all_gen.input,
+        rules.all_exa.input,
+        rules.all_ivaplot.input,
+        rules.all_fdm.input,
+        rules.all_fdmplot.input,
+        rules.all_velo.input
