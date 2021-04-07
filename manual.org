@@ -475,4 +475,21 @@ The ~pochoir plot-quiver~ can also produce results for 3D gradients.  A gradient
 
 
 * Developer guide
-t.b.d.
+
+** todo
+
+Some major features still wanted:
+
+- [ ] a way for a 2D potential to serve as boundary conditions for a
+  3D problem by defining a 2D boundary and projecting it along one of
+  the 3D dimensions.
+
+- [ ] normalize the collection of metadata from each command which is
+  stored on the result datasets.  Name input datasets in a uniform
+  manner, collect CLI parameters by name, collect and store time for
+  body of command.  Goal would be to produce post-hoc visualization
+  showing how any given result was produced or determine which rules a
+  given result influenced.
+
+- [ ] form "cross product" of paths and weighting fields to give
+  responses.

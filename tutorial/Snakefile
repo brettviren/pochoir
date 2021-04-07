@@ -199,9 +199,6 @@ rule velo:
     output:
         f"{store_dir}/{velo_key_p}.npz"
     params:
-        sol_key = sol_key_p,
-        dom_key = dom_key_p,
-        velo_key = velo_key_p,
         temperature = "89*K"
     shell: """
     pochoir -s {store_dir} velo \
@@ -210,6 +207,22 @@ rule velo:
       --result {output} \
       {input.sol}
     """
+
+rule quiver:
+    input:
+        dom = rules.domain.output.outdir,
+        vec = f"{store_dir}/{{tier}}/{{cfg}}-{{dom}}.npz"
+    output:
+        f"{plot_dir}/quivers/{{tier}}/{{cfg}}-{{dom}}.png"
+    params:
+        step = 10
+    shell: """
+    pochoir -s {store_dir} plot-quiver \
+      --step {params.step} \
+      --domain {input.dom} \
+      {input.vec} {output}
+    """
+
 rule all_velo:
     input:
         expand(rules.velo.output, cfg=EXAS+GENS, dom=DOMS)

@@ -421,16 +421,18 @@ def plot_image(ctx, domain, dataset, plotfile):
 @cli.command("plot-quiver")
 @click.option("-d", "--domain", type=str, default=None,
               help="Use named dataset for the domain, (def: indices)")
+@click.option("-s", "--step", type=int, default=1,
+              help="Set number of arrows to skip")
 @click.argument("dataset")
 @click.argument("plotfile")
 @click.pass_context
-def plot_quiver(ctx, domain, dataset, plotfile):
+def plot_quiver(ctx, domain, step, dataset, plotfile):
     '''
     Visualize a 2D or 3D vector field as a "quiver" plot.
     '''
     arr = ctx.obj.get(dataset)
     dom = ctx.obj.get_domain(domain)
-    pochoir.plots.quiver(arr, plotfile, domain=dom)
+    pochoir.plots.quiver(arr, plotfile, domain=dom, step=step)
 
 
 @cli.command("export-vtk-image")
