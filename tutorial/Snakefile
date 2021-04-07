@@ -13,7 +13,7 @@ DOMS = ["wfar",]
 
 # Generated and example problem configurations use wildcard "cfg"
 GENS = ["sandh",]
-EXAS = ["dipole"]
+EXAS = ["dipole","dipoledr","dipolew1","dipolew2"]
 CFGS = GENS+EXAS
 def isin(lst):
     return r"\b("+'|'.join(lst)+r")\b"
@@ -22,7 +22,10 @@ isexa = isin(EXAS)
 
 # boundary conditions
 bcs = dict(sandh="periodic,periodic",
-           dipole="periodic,periodic")
+           dipole="periodic,periodic",
+           dipoledr="periodic,periodic",
+           dipolew1="periodic,periodic",
+           dipolew2="periodic,periodic")
 
 
 # Things that have a configuration file
@@ -207,13 +210,20 @@ rule velo:
       --result {output} \
       {input.sol}
     """
+rule all_velo:
+    input:
+        expand(rules.velo.output, cfg=EXAS+GENS, dom=DOMS)
+
+
+# list all the types of vector fields
+VECS=["velos"]
 
 rule quiver:
     input:
         dom = rules.domain.output.outdir,
-        vec = f"{store_dir}/{{tier}}/{{cfg}}-{{dom}}.npz"
+        vec = f"{store_dir}/{{vec}}/{{cfg}}-{{dom}}.npz"
     output:
-        f"{plot_dir}/quivers/{{tier}}/{{cfg}}-{{dom}}.png"
+        f"{plot_dir}/quivers/{{vec}}/{{cfg}}-{{dom}}.png"
     params:
         step = 10
     shell: """
@@ -222,10 +232,11 @@ rule quiver:
       --domain {input.dom} \
       {input.vec} {output}
     """
-
-rule all_velo:
+rule all_quiver:
     input:
-        expand(rules.velo.output, cfg=EXAS+GENS, dom=DOMS)
+        expand(rules.quiver.output, cfg=EXAS+GENS, dom=DOMS,
+               vec=VECS)
+
 
 rule all:
     input:
@@ -236,4 +247,5 @@ rule all:
         rules.all_ivaplot.input,
         rules.all_fdm.input,
         rules.all_fdmplot.input,
-        rules.all_velo.input
+        rules.all_velo.input,
+        rules.all_quiver.input

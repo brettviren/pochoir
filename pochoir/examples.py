@@ -6,10 +6,19 @@ initial/boundary value arrays.
 
 import numpy
 
-def ex_dipole(dom):
+def ex_dipole(dom, field="dr"):
     '''
-    Produce a dipole problem
+    Produce a dipole problem with a given field in ("dr","w1","w2").
     '''
+    pot1=+100
+    pot2=-100
+    if field == "w1":
+        pot1=1
+        pot2=0
+    if field == "w2":
+        pot1=0
+        pot2=1
+
     bb = dom.bb
     print(bb, dom.shape)
     d = bb[1] - bb[0]
@@ -24,12 +33,19 @@ def ex_dipole(dom):
     iva = numpy.zeros(dom.shape, dtype=float)
     bva = numpy.zeros(dom.shape, dtype=bool)
 
-    iva[ind1] = 100
-    iva[ind2] = -100    
+    iva[ind1] = pot1
+    iva[ind2] = pot2
     bva[ind1] = True
     bva[ind2] = True    
 
     return iva, bva
+
+def ex_dipoledr(dom):
+    return ex_dipole(dom, "dr")
+def ex_dipolew1(dom):
+    return ex_dipole(dom, "w1")
+def ex_dipolew2(dom):
+    return ex_dipole(dom, "w2")
 
 def ex_sandh(dom=None):
     '''

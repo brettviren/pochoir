@@ -104,7 +104,8 @@ def ls(ctx, things):
 @click.pass_context
 def gen(ctx, domain, generator, initial, boundary, configs):
     '''
-    Generate initial and boundary value arrays from a high-level generator.
+    Generate initial and boundary value arrays from a high-level
+    generator.
     '''
     if generator is None:
         print("available geometry generators:")
