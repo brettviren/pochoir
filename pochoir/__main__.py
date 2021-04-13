@@ -436,6 +436,21 @@ def plot_quiver(ctx, domain, step, dataset, plotfile):
     pochoir.plots.quiver(arr, plotfile, domain=dom, step=step)
 
 
+@cli.command("plot-drift")
+@click.option("-d", "--domain", type=str, default=None,
+              help="Use named dataset for the domain, (def: indices)")
+@click.option("-t", "--trajectory", type=int, default=-1,
+              help="Numer of trajectories to plot (def: plot only traj 0)")
+@click.argument("dataset")
+@click.argument("plotfile")
+@click.pass_context
+def plot_drift(ctx, domain, trajectory, dataset, plotfile):
+
+    arr = ctx.obj.get(dataset)
+    dom = ctx.obj.get_domain(domain)
+    pochoir.plots.drift(arr, plotfile, dom , trajectory)
+
+
 @cli.command("export-vtk-image")
 @click.argument("name")
 @click.pass_context
