@@ -55,3 +55,24 @@ def quiver(varr, fname, domain, step=1):
                   varr[0][slcs[0]], varr[1][slcs[1]], varr[2][slcs[2]],
                   length=domain.spacing[0], normalize=True)
     savefig(fname)
+
+def drift(varr, fname, domain, trajectory):
+    varr = [arrays.to_numpy(a) for a in varr]
+    ndim = len(varr)
+    mg = domain.meshgrid
+    plt.clf()
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.set_xlim3d(0,domain.shape[0]*domain.spacing[0])
+    ax.set_ylim3d(0,domain.shape[1]*domain.spacing[1])
+    ax.set_zlim3d(0,domain.shape[2]*domain.spacing[2])
+    if(len(varr)<trajectory):
+        raise ValueError("Not enough trajectories to plot")
+    if(trajectory==-1):
+        xdata,ydata,zdata = varr[0][:,0],varr[0][:,1],varr[0][:,2]
+        ax.plot3D(xdata,ydata,zdata)
+    else:
+        for i in range(trajectory):
+            xdata,ydata,zdata = varr[i][:,0],varr[i][:,1],varr[i][:,2]
+            ax.plot3D(xdata,ydata,zdata)
+    savefig(fname)
