@@ -120,18 +120,19 @@ def draw_pcb_plane(shape,arr,z,r1,r2,free,val):
 
 def draw_3D_pcb(arr,shape,r1,r2,v_cath,v_pcb,v_an,pcb_width):
     volt = (v_cath,v_pcb)
+    
     for z in range(shape[2]-1)[1:]:
         if z<pcb_width:
             draw_pcb_plane(shape,arr,z,r1,r2,0,(0,v_pcb))
         else:
             draw_pcb_plane(shape,arr,z,r1,r2,1,(0,0))
-    draw_pcb_plane(shape,arr,0,r1,r2,0,(v_cath,v_pcb))
     draw_pcb_plane(shape,arr,shape[2]-1,r1,r2,1,(v_an,0))
+    draw_pcb_plane(shape,arr,0,r1,r2,1,(v_cath,v_cath))
 
 def generator(dom, cfg):
     arr = numpy.zeros(dom.shape)
     barr = numpy.ones(dom.shape)
-    draw_3D_pcb(arr,dom.shape,41,41,2000,-1,-15000,10)
+    draw_3D_pcb(arr,dom.shape,41,41,2000,-1,-15000,100)
     barr[arr == 0] = 0
-    
+    draw_3D_pcb(arr,dom.shape,41,41,2000,0,-15000,100)
     return arr,barr
