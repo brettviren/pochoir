@@ -61,15 +61,14 @@ def generator(dom, cfg):
     arr = numpy.zeros(dom.shape)
     barr = numpy.zeros(dom.shape)
     
-    #all hardcoded parameters should be provided via cfg
-    plane = 0;
-    conf=1 # 2d view configuration
-    widthX = 5.2 #strip width in X
-    widthZ = 3.2 # strip width in Z
-    positionZ = 17 # lowes position of the strip in Z in mm
-    holeWidth = 2.5 # holde diameter in the strip
-    Nstrips = 21 # total number of strips
-    
+    plane = cfg['plane']; # check wich plane to set to 1V (coll/ind)
+    conf= cfg['config'] # 2d view configuration
+    widthX = cfg['StripWidthX'] #strip width in X
+    widthZ = cfg['StripWidthZ'] # strip width in Z
+    positionZ = cfg['LowEdgePosition'] # lowes position of the strip in Z in mm
+    holeWidth = cfg['HoleDiameter'] # holde diameter in the strip
+    Nstrips = cfg['Nstrips'] # total number of strips
+        
     shape = dom.shape
     spacing = dom.spacing[0]
     z_i=int(positionZ/spacing)

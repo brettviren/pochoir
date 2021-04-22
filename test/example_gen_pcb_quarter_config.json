@@ -1,0 +1,8 @@
+{
+    "FirstHoleRadius" : 1.25,
+    "SecondHoleRadius" : 1.25,
+    "PcbWidth" : 3.2,
+    "PcbLowEdgePosition" : 17,
+    "CathodePotential" : 2000,
+    "AnodePotential" : -15000
+}

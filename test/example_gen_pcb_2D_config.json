@@ -1,0 +1,9 @@
+{
+    "plane" : 0,
+    "config" : 1,
+    "StripWidthX" : 5.2,
+    "StripWidthZ" : 3.2,
+    "HoleDiameter" : 2.5,
+    "LowEdgePosition" : 17,
+    "Nstrips" : 21
+}
