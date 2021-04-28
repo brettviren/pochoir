@@ -364,6 +364,41 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
     ctx.obj.put(boundary, barr, result="boundary",
                 geom=fnames, domain=domain)
 
+@cli.command()
+@click.option("-s","--solution", type=str,
+              help="Name 2D solution value array")
+@click.option("-i","--initial", type=str,
+              help="Name 3D initial values array")
+@click.option("-b","--boundary", type=str,
+              help="Name 3D boundary array")
+@click.option("-d","--domain2d", type=str,
+              help="Name 2D domain")
+@click.option("-D","--domain3d", type=str,
+              help="Name 3D domain")
+@click.option("-x","--xcoord", type=float, default=17.5,
+              help="Name distance from the center along Xaxis to setup BC")
+@click.argument("init_interpolated")
+@click.argument("bc_interpolated")
+@click.pass_context
+def bc_interp(ctx, solution, initial, boundary,
+        domain2d, domain3d, xcoord, init_interpolated,
+        bc_interpolated):
+    '''
+    Interpolate 2D solution into 3D boundary condition
+    '''
+    sol2D = ctx.obj.get(solution)
+    barr3D = ctx.obj.get(boundary)
+    arr3D = ctx.obj.get(initial)
+    dom2D = ctx.obj.get_domain(domain2d)
+    dom3D = ctx.obj.get_domain(domain3d)
+    arr, barr= pochoir.bc_interp.interp(sol2D, arr3D, barr3D, dom2D,
+                                 dom3D, xcoord)
+    params = dict(operation="bc_interp",
+                  solution=solution, initial=initial, boundary=boundary,
+                          domain2d=domain2d, domain3d=domain3d, xcoord=xcoord)
+    ctx.obj.put(init_interpolated, arr, result="init_interpolated", **params)
+    ctx.obj.put(bc_interpolated, barr, result="bc_interpolated", **params)
+
 
 @cli.command()
 @click.option("-i","--initial", type=str,
