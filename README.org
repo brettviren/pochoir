@@ -3,7 +3,10 @@
 
 * Overview
 
-See the [[file:manual.org][manual]] for details.
+See also
+
+- the [[file:overview.org][overview]] for high level parts.
+- the [[file:manual.org][manual]] for details.
 
 The ~pochoir~ package solves for /field responses/ which model the current
 induced in electrodes by electric charge (eg, electrons from

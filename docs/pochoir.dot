@@ -1,0 +1,68 @@
+digraph pochoir {
+        // operators
+        node[shape=hexagon]
+        op_gens[label="Problem\ngenerators"]
+
+        // commands
+        node[shape=record]
+        cmd_domain[label="''domain''\nCreate domain"]
+        cmd_gen[label="{''gen''\nGenerate IVA/BVA|generator name|generator config}"]
+        cmd_fdm[label="{''fdm''\nSolve Laplace\n(FDM)|epoch size|# epochs|precision}"]
+        cmd_velo[label="{''velo''\nCalculate velocity|LAr model|temperature}"]
+        cmd_starts[label="{''starts''\nDefine path starts|list of points}"]
+        cmd_drift[label="{''drift''\nCalculate paths|stepper|time start|time stop|time step}"]
+        cmd_bcinterp[label="{''bc-interp''\nApply 2D solution\nas 3D boundary|xcoord}"]
+        cmd_srdot[label="{''srdot''\nShockley-Ramo|drift charge value}"]
+        cmd_format[label="{''export''\nExport|filename|format}"]
+
+        // arrays
+        node[shape=Mrecord]
+        domain[label="{DOMAIN|N dimensions (2 or 3)|array shape|spacial origin|grid spacing}"]
+        initial[label="{INITIAL|N-D scalar}"]
+        boundary[label="{BOUNDARY|N-D scalar}"]
+        edges[label="{EDGES|``periodic''\nor ``fixed''}"]
+        pot[label="{POTENTIAL|N-D scalar}"]
+        espot[label="{Electrostatic\napplied potential|N-D scalar}"]
+        wpot[label="{Weighting\npotential\n(2D or 3D)|N-D scalar}"]
+
+        poterr[label="{ERRORS|N-D scalar}"]
+        velo[label="{VELO|N-D vector}"]
+        starts[label="{STARTS|(P,N) scalar}"]
+        paths[label="{PATHS|(P,N,T) scalar}"]
+        resps[label="{FIELD RESPONSES|(P,T) scalar}"]
+        json[label="{WCT FORMAT|JSON}"]
+
+
+        cmd_domain->domain
+        domain->cmd_gen
+        op_gens->cmd_gen[style=dotted]
+        cmd_gen->initial
+        cmd_gen->boundary
+        edges->cmd_fdm
+        initial->cmd_fdm
+        boundary->cmd_fdm
+        cmd_fdm->pot
+        cmd_fdm->poterr
+
+        pot->espot[style=dashed]
+        pot->wpot[style=dashed]
+
+        
+        domain ->cmd_bcinterp
+        initial -> cmd_bcinterp -> initial
+        boundary -> cmd_bcinterp -> boundary
+
+        espot -> cmd_velo -> velo
+        domain -> cmd_velo
+
+        domain->cmd_starts -> starts
+        starts -> cmd_drift
+        velo -> cmd_drift
+        domain->cmd_drift -> paths
+        
+        initial -> pot[dir=back,style=dashed]
+
+        wpot -> cmd_srdot
+        paths -> cmd_srdot
+        cmd_srdot -> resps -> cmd_format -> json
+}
