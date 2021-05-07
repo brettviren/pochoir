@@ -11,7 +11,7 @@ from . import lar
 from . import plots
 from . import drift
 from . import vtkexport
-
+from . import srdot
 
 from .version import version
 
