@@ -1,13 +1,121 @@
 #+title A pochoir tutorial
+#+EXPORT_FILE_NAME: index.html
 
-* notes
+STILL A WIP
 
-#+begin_src python
-  times = torch.arange(0,100,.1)
-start = torch.tensor((0.,0.))
-#+end_src
+* Introduction
 
-#+begin_center
-pochoir -s store starts -d doms/wfar -s starts/junk 0,0
-pochoir -s store drift -d doms/wfar -r paths/junk -e torch -s 0,10,0.1 starts/junk velos/dipole-wfar
-#+end_center
+This tutorial walks through the steps to use ~pochoir~ to calculate the
+field response for an anode consisting of two planes of mutually
+orthogonal strips with through-holes.
+
+* Setup
+
+The tutorial assumes the ~pochoir~ CLI is available.
+
+#+begin_example
+  $ pochoir --help
+#+end_example
+
+To avoid giving the ~-s/--store~ option each time we will define the
+location of the ~pochoir~ store as an environment variable.  For
+example:
+
+#+begin_example
+  $ export POCHOIR_STORE=/tmp/pochoir-tutorial-store
+#+end_example
+
+* Anti-tutorial
+
+In the actual tutorial starting next we will walk through the ~pochoir~
+commands as well as automating the running of these commands using
+Snakemake.  The automation can be ignored but to use it one needs the
+~snakemake~ command available.  To skip the tutorial entirely one may
+run:
+
+#+begin_example
+  $ cd tutorial/
+  $ snakemake -jall all
+#+end_example
+
+The entire DAG can be visualized:
+
+#+begin_example
+  $ snakemake -jall all --dag | dot -Tpng -o pochoir-tutorial.png
+#+end_example
+
+[[file:pochoir-tutorial.png]]
+
+This graph is the realization of the "type graph":
+
+[[file:../docs/pochoir.png]].
+
+The rest of this document opens up the black box of the automated
+solution and describes each type of command seen in these graphs.
+After understanding these commands, you should be able to apply
+~pochoir~ to solve novel field response problems.
+
+* Tutorial
+
+** Priming
+
+We assume a store in the current directory:
+
+#+begin_example
+  export POCHOIR_STORE=$(pwd)/store
+#+end_example
+
+We assume to run in directory holding this file you are reading.  A
+clean slate can be had after:
+
+#+begin_example
+  $ rm -rf cfgs/ store/
+#+end_example
+
+The Snakemake automation is performed on a directed acyclic graph.
+The graph starts with some simple JSON files which are provided by
+they may be modified or regenerated:
+
+#+begin_example
+  $ mkdir -p cfgs
+  $ jsonnet -m cfgs/ tutorial.jsonnet
+#+end_example
+
+Let's now get down to business.
+
+** Domains
+
+Every "problem" in ~pochoir~ exists on a "domain".  A domain is a 2-D or
+3-D array of a given /shape/ and with a given grid /spacing/.  It may also
+have a non-zero /origin/ which places the zero-index of the array in
+space.
+
+One particular problem which we name ~elects3d~ involves calculating
+the, electrostatic field and then paths on a 3D domain.  We will name
+the domain after the problem name.
+
+#+begin_example
+  $ pochoir domain -s 84,56,1000 -S 0.03 domains/elects3d
+#+end_example
+
+All domains for all problems considered by the tutorial automation can
+be created with this command:
+
+#+begin_example
+  $ snakemake -jall -p all_domains
+#+end_example
+
+By default we use ~pochoir~ NPZ+JSON store and so can see the domain
+files in the store with:
+
+#+begin_example
+  $ ls store/domains/elects3d/
+  origin.npz  shape.npz  spacing.npz
+#+end_example
+
+** Initial and boundary value arrays
+
+The core problem for ~pochoir~ is to solve Laplace equation on a domain
+and given /initial/ (IVA) and /boundary/ value (BVA) arrays.  These can be
+supplied externally and ~pochoir~ provides some built-in "generators".
+

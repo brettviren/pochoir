@@ -3,6 +3,7 @@
 Utility functions
 '''
 
+from pochoir import units
 import collections
 
 def flatten(d, sep='/', parent_key=""):
@@ -20,3 +21,23 @@ def flatten(d, sep='/', parent_key=""):
         except AttributeError:
             items.append((new_key, v))
     return dict(items)
+
+def unitify(dat):
+    '''
+    Apply units to things that look like they need it.
+
+    This does an eval, so trust your dat.
+    '''
+    if isinstance(dat, str):
+        dat = dat.strip()
+        if "*" in dat:          
+            try:
+                return eval(dat, units.__dict__)
+            except Exception:
+                return dat
+        return dat
+    if isinstance(dat, list):
+        return [unitify(d) for d in dat]
+    if isinstance(dat, dict):
+        return {k:unitify(v) for k,v in dat.items()}
+    return dat

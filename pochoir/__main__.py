@@ -118,6 +118,7 @@ def gen(ctx, domain, generator, initial, boundary, configs):
     cfg = dict()
     for config in configs:
         cfg.update(json.loads(open(config,'rb').read().decode()))
+    cfg = pochoir.util.unitify(cfg)
     meth = getattr(pochoir.gen, generator)
 
     dom = ctx.obj.get_domain(domain)

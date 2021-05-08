@@ -1,251 +1,93 @@
 #!/usr/bin/env snakemake
 '''
-Wildcards:
-- dom :: a domain
-- cfg :: a configuration, generated (gen) or example (exa)
+Snakemake automation of tutorial.
+
+Taxonomy:
+
+ - domain :: name of 2D or 3D array grid
+ - field :: name of an E-field or W-field
 
 '''
 
+import os
 import json
 
-# Domains.  They use the wild card "dom"
-DOMS = ["wfar",]
+store_dir = os.environ.get("POCHOIR_STORE", "store")
 
-# Generated and example problem configurations use wildcard "cfg"
-GENS = ["sandh",]
-EXAS = ["dipole","dipoledr","dipolew1","dipolew2"]
-CFGS = GENS+EXAS
-def isin(lst):
-    return r"\b("+'|'.join(lst)+r")\b"
-isgen = isin(GENS)
-isexa = isin(EXAS)
-
-# boundary conditions
-bcs = dict(sandh="periodic,periodic",
-           dipole="periodic,periodic",
-           dipoledr="periodic,periodic",
-           dipolew1="periodic,periodic",
-           dipolew2="periodic,periodic")
+DOMAINS = json.load(open("cfgs/domains.json"))
+FIELDS = json.load(open("cfgs/fields.json"))
 
 
-# Things that have a configuration file
-CONFIGURED = {"doms":DOMS,"gens":GENS}
+domain_cfg_p = 'cfgs/domain-{domain}.json'
+domain_p = f'{store_dir}/domains/{{domain}}/'
 
+field_cfg_p = 'cfgs/field-{field}.json'
+initial_p = f'{store_dir}/initial/{{field}}.npz'
+boundary_p = f'{store_dir}/boundary/{{field}}.npz'
+fdmsol_p = f'{store_dir}/fdmsol/{{field}}.npz'
+fdmerr_p = f'{store_dir}/fdmerr/{{field}}.npz'
 
-### Generate configuration files for CONFIGURED
-
-cfg_dir = "configs"
-store_dir = "store"
-plot_dir = "plots"
-gen_cfg_p = f"{cfg_dir}/gens/{{cfg}}.json"
-
-rule configs:
-    input:
-        "tutorial.jsonnet"
-    output:
-        doms = expand(f'{cfg_dir}/doms/{{dom}}.json', dom=DOMS),
-        gens = expand(f'{cfg_dir}/gens/{{gen}}.json', gen=GENS)
-    params:
-        odirs = expand(f'{cfg_dir}/{{cat}}',cat=["doms","gens"])
-    shell: """
-    mkdir -p {params.odirs}; 
-    jsonnet -m {cfg_dir} {input}
-    """
-
-rule all_configs:
-    input:
-        rules.configs.output
-
-dom_key_p = "doms/{dom}"
-dom_files_p = [f"{store_dir}/{dom_key_p}/origin.npz",
-               f"{store_dir}/{dom_key_p}/shape.npz",
-               f"{store_dir}/{dom_key_p}/spacing.npz"]
-
-## Make domains
-
-def dom_cfg(w):
-    return json.load(open(f'{cfg_dir}/doms/{w.dom}.json'))
+def domain_config(w):
+    cfg = json.load(open(domain_cfg_p.format(domain=w.domain)))
+    return ' '.join(['--{k} {v}'.format(k=k,v=v) for k,v in cfg.items()])
 
 rule domain:
     input:
-        cfgfile = f"{cfg_dir}/doms/{{dom}}.json"
+        domain_cfg_p
     output:
-        outfiles = dom_files_p,
-        outdir = directory(f"{store_dir}/{dom_key_p}")
+        directory(domain_p)
     params:
-        cfg = dom_cfg,
-        key = dom_key_p
+        domain_config
     shell: """
-    pochoir -s {store_dir} domain \
-    --shape {params.cfg[shape]} \
-    --spacing {params.cfg[spacing]} {output.outdir}
+    pochoir domain {params} {output}
     """
 
 rule all_domains:
     input:
-        expand(rules.domain.output.outfiles, dom=DOMS)
+        expand(rules.domain.output, domain=DOMAINS)
 
+def field_domain(w):
+    return domain_p.format(**FIELDS[w.field])
+def field_generator(w):
+    return FIELDS[w.field]['generator']
 
-## initial and boundary arryas.
-
-# Every problem configuration looks the same as far as files go.  But
-# there are two ways to create the iva/bva: "gen" and "exa".  Both use
-# "cfg" wildcard to get their name.  Plus they rely on a domain.
-
-# solution/initial value and boundary array keys.
-iva_key_p = "ivas/{cfg}-{dom}"
-bva_key_p = "bvas/{cfg}-{dom}"
-
-rule gen:
+rule fieldinit:
     input:
-        dom = rules.domain.output.outdir,
-        cfgf = f'{cfg_dir}/gens/{{cfg}}.json'
+        dom = field_domain,
+        cfg = field_cfg_p
     output:
-        iva = f"{store_dir}/{iva_key_p}.npz",
-        bva = f"{store_dir}/{bva_key_p}.npz"
-    wildcard_constraints:
-        cfg = isgen
-    shell: """
-    pochoir -s {store_dir} gen \
-      -d {input.dom} \
-      -i {output.iva} -b {output.bva} -g {wildcards.cfg} \
-      {input.cfgf}
-    """
-rule all_gen:
-    input: expand(rules.gen.output.iva, cfg=GENS, dom=DOMS)
-
-rule exa:
-    input:
-        dom = rules.domain.output.outdir
-    output:
-        iva = f"{store_dir}/{iva_key_p}.npz",
-        bva = f"{store_dir}/{bva_key_p}.npz"
-    wildcard_constraints:
-        cfg = isexa        
-    shell: """
-    pochoir -s {store_dir} example \
-      -d {input.dom} -i {output.iva} -b {output.bva} \
-      {wildcards.cfg}
-    """
-rule all_exa:
-    input: expand(rules.exa.output.iva, cfg=EXAS, dom=DOMS)
-
-rule ivaplot:
-    input:
-        dom = rules.domain.output.outdir,
-        iva = f"{store_dir}/{iva_key_p}.npz",
-        bva = f"{store_dir}/{bva_key_p}.npz"
-    output:
-        iva = f"{plot_dir}/{iva_key_p}.png",
-        bva = f"{plot_dir}/{bva_key_p}.png"
-    shell: """
-    pochoir -s {store_dir} plot-image \
-      -d {input.dom} {input.iva} {output.iva}
-    pochoir -s {store_dir} plot-image \
-      -d {input.dom} {input.bva} {output.bva}
-    """
-rule all_ivaplot:
-    input: expand(rules.ivaplot.output.iva, cfg=EXAS+GENS, dom=DOMS)
-
-
-sol_key_p = "sols/{cfg}-{dom}"
-err_key_p = "errs/{cfg}-{dom}"
-
-rule fdm:
-    input:
-        dom = rules.domain.output.outdir,
-        iva = f"{store_dir}/{iva_key_p}.npz",
-        bva = f"{store_dir}/{bva_key_p}.npz"
-    output:
-        sol = f"{store_dir}/{sol_key_p}.npz",
-        err = f"{store_dir}/{err_key_p}.npz"
+        iva = initial_p,
+        bva = boundary_p
     params:
-        bc = lambda w: bcs[w.cfg], 
-        nepochs = 100,
-        epoch = 100,
-        precision = 0.01,
+        gen = field_generator
     shell: """
-    pochoir -s {store_dir} fdm \
-      --edges {params.bc} \
-      --initial {input.iva} \
-      --boundary {input.bva} \
-      --precision {params.precision} \
-      --epoch {params.epoch} \
-      --nepochs {params.nepochs} \
+    pochoir gen -g {params.gen} \
+       -d {input.dom} -i {output.iva} -b {output.bva} \
+      {input.cfg}
+    """
+
+def fieldfdm_config(w):
+    cfg = FIELDS[w.field]['fdmcfg']
+    return ' '.join(['--{k} {v}'.format(k=k,v=v) for k,v in cfg.items()])
+
+
+rule fieldfdm:
+    input:
+        iva = initial_p,
+        bva = boundary_p
+    params:
+        fieldfdm_config
+    output:
+        sol = fdmsol_p,
+        err = fdmerr_p,
+    shell: """
+    pochoir fdm {params} -b {input.bva} -i {input.iva} \
       {output.sol} {output.err}
     """
-rule all_fdm:
-    input: expand(rules.fdm.output.sol, cfg=EXAS+GENS, dom=DOMS)
+        
+
+rule all_fields:
+    input:
+        expand(rules.fieldinit.output, field=FIELDS),
+        expand(rules.fieldfdm.output, field=FIELDS)
     
-rule fdmplot:
-    input:
-        dom = rules.domain.output.outdir,
-        sol = rules.fdm.output.sol,
-        err = rules.fdm.output.err
-    output:
-        sol = f"{plot_dir}/{sol_key_p}.png",
-        err = f"{plot_dir}/{err_key_p}.png"
-    shell: """
-    pochoir -s {store_dir} plot-image \
-      -d {input.dom} {input.sol} {output.sol}
-    pochoir -s {store_dir} plot-image \
-      -d {input.dom} {input.err} {output.err}
-    """
-rule all_fdmplot:
-    input: expand(rules.fdmplot.output.sol, cfg=EXAS+GENS, dom=DOMS)
-
-velo_key_p = "velos/{cfg}-{dom}"
-rule velo:
-    input:
-        dom = rules.domain.output.outdir,
-        sol = rules.fdm.output.sol
-    output:
-        f"{store_dir}/{velo_key_p}.npz"
-    params:
-        temperature = "89*K"
-    shell: """
-    pochoir -s {store_dir} velo \
-      --domain {input.dom} \
-      --temperature {params.temperature} \
-      --result {output} \
-      {input.sol}
-    """
-rule all_velo:
-    input:
-        expand(rules.velo.output, cfg=EXAS+GENS, dom=DOMS)
-
-
-# list all the types of vector fields
-VECS=["velos"]
-
-rule quiver:
-    input:
-        dom = rules.domain.output.outdir,
-        vec = f"{store_dir}/{{vec}}/{{cfg}}-{{dom}}.npz"
-    output:
-        f"{plot_dir}/quivers/{{vec}}/{{cfg}}-{{dom}}.png"
-    params:
-        step = 10
-    shell: """
-    pochoir -s {store_dir} plot-quiver \
-      --step {params.step} \
-      --domain {input.dom} \
-      {input.vec} {output}
-    """
-rule all_quiver:
-    input:
-        expand(rules.quiver.output, cfg=EXAS+GENS, dom=DOMS,
-               vec=VECS)
-
-
-rule all:
-    input:
-        rules.all_configs.input,
-        rules.all_domains.input,
-        rules.all_gen.input,
-        rules.all_exa.input,
-        rules.all_ivaplot.input,
-        rules.all_fdm.input,
-        rules.all_fdmplot.input,
-        rules.all_velo.input,
-        rules.all_quiver.input

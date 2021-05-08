@@ -18,6 +18,7 @@ setuptools.setup(
         "click",         # CLI
         "h5py",          # support HDF5 files or
         "numpy",         # .npz, need numpy in general
+        "matplotlib",
         "torch",         # for CPU/GPU
         "desolver",      # candidate for rk, needs post-inst hack/fix 
         "torchdiffeq",   # candidate for rk

@@ -7,6 +7,7 @@ from . import gen
 from . import fdm
 from . import domain
 from . import units
+from . import util
 from . import lar
 from . import plots
 from . import drift
