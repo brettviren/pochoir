@@ -263,16 +263,20 @@ def starts(ctx, domain, starts, points):
               help="Give start,stop,step")
 @click.option("-d","--domain", default=None, type=str,
               help="Use domain for the plot")
-@click.option("-e","--engine", type=click.Choice(["scipy","torch"]),
-              default="torch",
-              help="Name the solver engine")
+# @click.option("-e","--engine", type=click.Choice(["scipy","torch"]),
+#               default="torch",
+#               help="Name the solver engine")
 @click.argument("starts")
 @click.argument("velocity")
 @click.pass_context
-def drift(ctx, result, steps, domain, engine, starts, velocity):
+def drift(ctx, result, steps, domain, starts, velocity):
     '''
     Calculate drift paths.
     '''
+    engine = 'torch'
+    if ctx.obj.device == 'cpu':
+        engine = 'scipy'
+
     start, stop, step = pochoir.arrays.fromstr1(steps)
     nsteps = int((stop-start)/step)
 
