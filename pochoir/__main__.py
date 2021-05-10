@@ -402,6 +402,35 @@ def bc_interp(ctx, solution, initial, boundary,
 
 
 @cli.command()
+@click.option("-d","--domaine", type=str,
+              help="Name 3D domain for Ew calculation")
+@click.option("-D","--domaind", type=str,
+              help="Name 3D domain for drift calculation")
+@click.option("-s","--solutione", type=str,
+              help="Name 3D Ew solution")
+@click.option("-S","--solutiond", type=str,
+              help="Name 3D drift solution")
+@click.option("-v","--velocity", type=str,
+              help="Name velocity array")
+@click.argument("sr_result")
+@click.pass_context
+def srdot(ctx,domaine,domaind,solutione,solutiond,velocity,sr_result):
+    '''
+    Make dot product between drift paths and weighted fields for the Shockley–Ramo theorem
+    '''
+    dom_Ew = ctx.obj.get_domain(domaine)
+    dom_Drift = ctx.obj.get_domain(domaind)
+    pot = ctx.obj.get(solutione)
+    sol_Ew = pochoir.arrays.gradient(pot, dom_Ew.spacing)
+    sol_Drift = ctx.obj.get(solutiond)
+    velo = ctx.obj.get(velocity)
+    res= pochoir.srdot.dotprod(dom_Ew,dom_Drift,sol_Ew,sol_Drift,velo)
+    params = dict(operation="srdot",
+                      domaine=domaine,domaind=domaind,solutione=solutione,solutiond=solutiond,velocity=velocity)
+    ctx.obj.put(sr_result, res, result="sr_result", **params)
+
+
+@cli.command()
 @click.option("-i","--initial", type=str,
               help="Name initial value array")
 @click.option("-b","--boundary", type=str,
