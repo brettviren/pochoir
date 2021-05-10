@@ -1,36 +1,36 @@
 #!/usr/bin/env snakemake
 '''
 Snakemake automation of tutorial.
-
-Taxonomy:
-
- - domain :: name of 2D or 3D array grid
- - field :: name of an E-field or W-field
-
 '''
 
 import os
 import json
 
 store_dir = os.environ.get("POCHOIR_STORE", "store")
+cfg_dir = "cfgs"
 
-DOMAINS = json.load(open("cfgs/domains.json"))
-FIELDS = json.load(open("cfgs/fields.json"))
+## These define the taxonomy:
+DOMAINS = json.load(open(f"{cfg_dir}/domains.json"))
+GENERATORS = json.load(open(f"{cfg_dir}/generators.json"))
+FIELDS = json.load(open(f"{cfg_dir}/fields.json"))
+DRIFTS = json.load(open(f"{cfg_dir}/drifts.json"))
+
+# Define patterns to data files under our store
+domain_p = f'{store_dir}/domains/{{domain}}'
+initial_p = f'{store_dir}/initial/{{domain}}-{{generator}}.npz'
+boundary_p = f'{store_dir}/boundary/{{domain}}-{{generator}}.npz'
+fdmsol_p = f'{store_dir}/fdmsol/{{domain}}-{{generator}}-{{field}}.npz'
+fdmerr_p = f'{store_dir}/fdmerr/{{domain}}-{{generator}}-{{field}}.npz'
+velo_p = f'{store_dir}/velo/{{domain}}-{{generator}}-{{field}}.npz'
+starts_p = f'{store_dir}/starts/{{domain}}-{{drift}}.npz'
+paths_p = f'{store_dir}/paths/{{domain}}-{{generator}}-{{field}}-{{drift}}.npz'
 
 
-domain_cfg_p = 'cfgs/domain-{domain}.json'
-domain_p = f'{store_dir}/domains/{{domain}}/'
-
-field_cfg_p = 'cfgs/field-{field}.json'
-initial_p = f'{store_dir}/initial/{{field}}.npz'
-boundary_p = f'{store_dir}/boundary/{{field}}.npz'
-fdmsol_p = f'{store_dir}/fdmsol/{{field}}.npz'
-fdmerr_p = f'{store_dir}/fdmerr/{{field}}.npz'
-
+### DOMAINS
+domain_cfg_p =f'{cfg_dir}/domain-{{domain}}.json'
 def domain_config(w):
     cfg = json.load(open(domain_cfg_p.format(domain=w.domain)))
     return ' '.join(['--{k} {v}'.format(k=k,v=v) for k,v in cfg.items()])
-
 rule domain:
     input:
         domain_cfg_p
@@ -46,37 +46,56 @@ rule all_domains:
     input:
         expand(rules.domain.output, domain=DOMAINS)
 
-def field_domain(w):
-    return domain_p.format(**FIELDS[w.field])
-def field_generator(w):
-    return FIELDS[w.field]['generator']
 
-rule fieldinit:
+
+### GENERATORS
+generator_cfg_p =f'{cfg_dir}/generator-{{generator}}.json'
+def generator_config(w):
+    cfg = json.load(open(generator_cfg_p.format(domain=w.generator)))
+    return ' '.join(['--{k} {v}'.format(k=k,v=v) for k,v in cfg.items()])
+def generator_method(w):
+    return GENERATORS[w.generator]['method']
+
+rule generator:
     input:
-        dom = field_domain,
-        cfg = field_cfg_p
+        dom = rules.domain.output,
+        cfg = generator_cfg_p
     output:
         iva = initial_p,
         bva = boundary_p
     params:
-        gen = field_generator
+        generator_method
     shell: """
-    pochoir gen -g {params.gen} \
+    pochoir gen -g {params} \
        -d {input.dom} -i {output.iva} -b {output.bva} \
       {input.cfg}
     """
 
-def fieldfdm_config(w):
-    cfg = FIELDS[w.field]['fdmcfg']
+def myexpand(pat, taxon, objs):
+    ret = list()
+    for obj in objs:
+        dat = dict({taxon:obj['name']}, **obj)
+        one = expand(pat, **dat)
+        ret.append(one)
+    return ret
+
+rule all_generators:
+    input:
+        myexpand(initial_p, "generator", GENERATORS.values())
+
+
+
+field_cfg_p = f'{cfg_dir}/field-{{field}}.json'
+def field_params(w):
+    cfg = json.load(open(field_cfg_p.format(field=w.field)))
     return ' '.join(['--{k} {v}'.format(k=k,v=v) for k,v in cfg.items()])
 
-
-rule fieldfdm:
+rule field:
     input:
         iva = initial_p,
         bva = boundary_p
     params:
-        fieldfdm_config
+        field_params
     output:
         sol = fdmsol_p,
         err = fdmerr_p,
@@ -85,9 +104,69 @@ rule fieldfdm:
       {output.sol} {output.err}
     """
         
-
 rule all_fields:
     input:
-        expand(rules.fieldinit.output, field=FIELDS),
-        expand(rules.fieldfdm.output, field=FIELDS)
+        myexpand(fdmsol_p, "field", FIELDS.values())
     
+rule velo:
+    input:
+        dom = rules.domain.output,
+        pot = fdmsol_p
+    params:
+        temperature = "89*K"
+    output:
+        res = velo_p
+    shell: """        
+    pochoir velo -d {input.dom} -r {output.res} -t {params.temperature} {input.pot}
+    """
+
+rule all_velo:
+    input:
+        expand(velo_p, domain="elects3d", generator="drift3d", field="drift")
+
+
+
+drift_cfg_p = f'{cfg_dir}/drift-{{drift}}.json'
+def starts_params(w):
+    cfg = json.load(open(drift_cfg_p.format(drift=w.drift)))
+    s = [",".join(s) for s in cfg['points']]
+    return " ".join(s)
+
+rule starts:
+    input:
+        rules.domain.output
+    params:
+        starts_params
+    output:
+        starts_p
+    shell: """
+    pochoir starts -d {input} -s {output} {params}
+    """
+
+rule all_starts:
+    input:
+        myexpand(rules.starts.output, "drift", DRIFTS.values())
+    
+def drift_params(w):
+    cfg = json.load(open(drift_cfg_p.format(drift=w.drift)))
+    return ",".join(cfg['steps'])
+
+rule drift:
+    input:
+        dom = rules.domain.output,
+        starts = starts_p,
+        velo = velo_p
+    params:
+        drift_params
+    output:
+        paths_p
+    shell: """
+    pochoir drift \
+      -r {output} -s {params} \
+      -d {input.dom} {input.starts} {input.velo}
+    """
+
+rule all_drifts:
+    input:
+        myexpand(rules.drift.output, "drift", DRIFTS.values())
+        
