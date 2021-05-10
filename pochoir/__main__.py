@@ -380,7 +380,7 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
               help="Name 2D domain")
 @click.option("-D","--domain3d", type=str,
               help="Name 3D domain")
-@click.option("-x","--xcoord", type=float, default=17.5,
+@click.option("-x","--xcoord", type=str, default="17.5*mm",
               help="Name distance from the center along Xaxis to setup BC")
 @click.argument("init_interpolated")
 @click.argument("bc_interpolated")
@@ -396,8 +396,11 @@ def bc_interp(ctx, solution, initial, boundary,
     arr3D = ctx.obj.get(initial)
     dom2D = ctx.obj.get_domain(domain2d)
     dom3D = ctx.obj.get_domain(domain3d)
-    arr, barr= pochoir.bc_interp.interp(sol2D, arr3D, barr3D, dom2D,
-                                 dom3D, xcoord)
+    xcoord = pochoir.util.unitify(xcoord)
+
+    from pochoir.bc_interp import interp
+
+    arr, barr= interp(sol2D, arr3D, barr3D, dom2D, dom3D, xcoord)
     params = dict(operation="bc_interp",
                   solution=solution, initial=initial, boundary=boundary,
                           domain2d=domain2d, domain3d=domain3d, xcoord=xcoord)
