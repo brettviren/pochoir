@@ -170,3 +170,18 @@ rule all_drifts:
     input:
         myexpand(rules.drift.output, "drift", DRIFTS.values())
         
+
+rule all:
+    input:
+        # rules.all_domains.input,
+        # rules.all_generators.input,
+        rules.all_fields.input,
+        # rules.all_velo.input,
+        # rules.all_starts.input,
+        rules.all_drifts.input
+        
+
+# rule srdot:
+#     input: 
+
+# pochoir srdot -d pcb_3Dstrips_domain -D pcb_domain -s pcb_3Dstrips_sol -S pcb_drift -v pcb_velo pcb_srdot

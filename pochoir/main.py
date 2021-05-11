@@ -68,7 +68,8 @@ class Main:
         Key should be for a group of datasets or directory of files
         describing a domain.
         '''
-        _, md = self.get(key, True)
+        key = self.key(key)
+        _, md = self.instore.get(key, True)
         # dom = Domain(self.get(key + "/shape"),
         #              self.get(key + "/spacing"),
         #              self.get(key + "/origin"))
@@ -84,9 +85,7 @@ class Main:
 
         Note, this saves to a group of datasets (directory of files)
         '''
-        md = dict(shape=dom.shape, spacing=dom.spacing,
-                  origin=dom.origin)
-        self.put(key, (), **md)
+        self.put(key, (), **dom.asdict)
         # self.put(key + "/shape", dom.shape)
         # self.put(key + "/spacing", dom.spacing)
         # self.put(key + "/origin", dom.origin)
