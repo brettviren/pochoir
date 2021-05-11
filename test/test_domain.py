@@ -1,36 +1,14 @@
 #!/usr/bin/env pytest
-import numpy
 from pochoir.domain import Domain
-from pochoir.plots import quiver
+from pochoir.persist import tempstore
 
-def test_domain_3d():
-    d = Domain(numpy.array([20,10,100]), numpy.array([0.1, 0.1, 0.1]))
-    assert (d.shape == (20,10,100)).all()
-    assert (d.shape.size == 3)
-    assert (d.spacing.size == 3)
-    assert (d.origin.size == 3)
-    lss = d.linspaces
-    for ls,size in zip(lss, d.shape):
-        assert(len(ls) == size)
-
-    print(d.shape)
-    scalar = numpy.random.rand(*d.shape)
-    print(scalar.shape)
-    vector = numpy.gradient(scalar)
-    print(vector[0].shape)
-    quiver(vector, "test_domain_3d.png", d)
+def test_domain_creation():
+    with tempstore("test-domain") as s:
+        dom = Domain([20,10], [0.1, 0.1], [200.0, 100.0])
+        md = dom.asdict
+        s.put("test-key", (), **md)
+        arr, md2 = s.get("test-key", True)
+        assert len(arr) == 0
+        assert md == md2
 
 
-def test_domain_2d():
-    d = Domain(numpy.array([20,10]),
-               numpy.array([0.1, 0.1]),
-               numpy.array([200.0, 100.0]))
-    assert (d.shape == (20,10)).all()
-    lss = d.linspaces
-    for ls,size in zip(lss, d.shape):
-        assert(len(ls) == size)
-    print (d.imshow_extent)
-
-    scalar = numpy.random.rand(*d.shape)
-    vector = numpy.gradient(scalar)
-    quiver(vector, "test_domain_2d.png", d)

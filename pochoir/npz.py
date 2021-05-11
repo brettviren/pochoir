@@ -2,13 +2,7 @@
 '''
 pochoir support for NPZ file format
 
-This mimics HDF5 model in the following way:
-
-- a dataset is an array held in an .npz file.  
-- a dataset name is reflected in both the .npz file and the array key.
-- a group is a file system directory
-- metadata on dataset or group is held in a JSON file of the same name
-
+This mimics HDF5 model.
 '''
 
 import os
@@ -22,6 +16,9 @@ class Store:
     mdext = ".json"
 
     def __init__(self, basedir, mode):
+        '''
+        Create a NPZ+JSON store rooted on basedir.
+        '''
         self.basedir = Path(basedir)
         if not self.basedir.exists():
             self.basedir.mkdir(parents=True)

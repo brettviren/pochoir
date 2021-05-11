@@ -68,9 +68,14 @@ class Main:
         Key should be for a group of datasets or directory of files
         describing a domain.
         '''
-        dom = Domain(self.get(key + "/shape"),
-                     self.get(key + "/spacing"),
-                     self.get(key + "/origin"))
+        _, md = self.get(key, True)
+        # dom = Domain(self.get(key + "/shape"),
+        #              self.get(key + "/spacing"),
+        #              self.get(key + "/origin"))
+        shape = md.pop("shape")
+        spacing = md.pop("spacing")
+        origin = md.pop("origin", None)
+        dom = Domain(shape, spacing, origin)
         return dom
 
     def put_domain(self, key, dom):
@@ -79,9 +84,12 @@ class Main:
 
         Note, this saves to a group of datasets (directory of files)
         '''
-        self.put(key + "/shape", dom.shape)
-        self.put(key + "/spacing", dom.spacing)
-        self.put(key + "/origin", dom.origin)
+        md = dict(shape=dom.shape, spacing=dom.spacing,
+                  origin=dom.origin)
+        self.put(key, (), **md)
+        # self.put(key + "/shape", dom.shape)
+        # self.put(key + "/spacing", dom.spacing)
+        # self.put(key + "/origin", dom.origin)
 
     def put(self, key, array, **metadata):
         '''

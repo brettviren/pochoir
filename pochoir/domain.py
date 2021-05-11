@@ -21,7 +21,7 @@ class Domain:
         Where index refers to indices on some given array.
 
         '''
-        self.shape = shape
+        self.shape = numpy.array(shape)
         if isinstance(spacing, int) or isinstance(spacing,float):
             self.spacing = numpy.zeros(len(self.shape)) + spacing
         else:
@@ -124,3 +124,8 @@ class Domain:
         return gradient(scalar, self.spacing)
 
 
+    @property
+    def asdict(self):
+        return dict(shape = self.shape.tolist(),
+                    spacing = self.spacing.tolist(),
+                    origin = self.origin.tolist())

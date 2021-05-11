@@ -31,7 +31,7 @@ def image(arr, fname, domain, title=""):
 
     savefig(fname)
 
-def quiver(varr, fname, domain, step=1):
+def quiver(varr, fname, domain):
     varr = [arrays.to_numpy(a) for a in varr]
     ndim = len(varr)
     if ndim not in (2,3):
@@ -39,20 +39,16 @@ def quiver(varr, fname, domain, step=1):
 
     mg = domain.meshgrid
 
-    slcs = list()
-    for s in varr[0].shape:
-        slcs.append(slice(0,s,step))
-
     plt.clf()
     if ndim == 2:               # 2D
-        plt.quiver(mg[0][slcs[0]], mg[1][slcs[1]],
-                   varr[0][slcs[0]], varr[1][slcs[1]], units='xy')
+        plt.quiver(mg[0], mg[1],
+                   varr[0], varr[1], units='xy')
     else:                       # 3D
         fig = plt.figure()
         ax = fig.gca(projection='3d')
 
-        ax.quiver(mg[0][slcs[0]], mg[1][slcs[1]], mg[2][slcs[2]],
-                  varr[0][slcs[0]], varr[1][slcs[1]], varr[2][slcs[2]],
+        ax.quiver(mg[0], mg[1], mg[2],
+                  varr[0], varr[1], varr[2],
                   length=domain.spacing[0], normalize=True)
     savefig(fname)
 
