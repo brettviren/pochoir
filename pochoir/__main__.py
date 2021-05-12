@@ -1,7 +1,58 @@
 #!/usr/bin/env python3
 '''
 CLI to pochoir
+
+pochoir [global options] <command> [command options] [arguments]
+
+Most commands here can be thought of nodes in a DAG joined by entries
+in the pochoir data store.
+
+For consistency the following conventions are followed:
+
+    - both input from the store and named output destined for the
+      store are given as command options.
+
+    - input has lower-case short options, output has upper.
+
+    - options may be used for non-store related names
+
+    - arguments are for non-store related information
+
+Every array output to the store should have metadata which describes
+what inputs were used to create it.  Commands which need an ancestor
+array do not be explicitly require it named on the command line but
+instead it is resovled via metadta based on a more immediate input
+array.
+
+There is a data type taxonomy and its names are used in a manner
+constient between CLI option names and store keys.  These are:
+
+    - domain :: a grid of points in space
+
+    - initial :: a scalar field holding an Initial Value Array
+
+    - boundary :: a scalar field holding a Boundary Value Array
+
+    - potential :: a scalar field such as solved by FDM
+
+    - increment :: a scalar field holding the difference between two
+      potentials from subsequent FDM steps aka the "error" in a
+      potential solution.
+
+    - velocity :: a vector velocity field
+
+    - gradient :: a vector gradient field
+
+    - points :: points in space
+    - ...
+
+Additional metadata may be stored such as:
+
+    - taxon :: name the taxonomy type of the array
+
+    - command :: name the command that produced the array
 '''
+
 import json
 import click
 import pochoir
@@ -33,159 +84,18 @@ def version():
 
 
 @cli.command()
-@click.option("-d", "--domain", type=str, 
-              help="Use named dataset for the domain, (def: indices)")
-@click.option("-i","--initial", type=str,
-              help="Name initial value array")
-@click.option("-b","--boundary", type=str,
-              help="Name the boundary array")
-@click.argument("name")
-@click.pass_context
-def example(ctx, domain, initial, boundary, name):
-    '''
-    Generate a boundary and initial array example (try "list")
-    '''
-    if name == "list":
-        for one in dir(pochoir.examples):
-            if one.startswith("ex_"):
-                print(one[3:])
-        return
-
-    meth = getattr(pochoir.examples, "ex_" + name)
-
-    dom = None
-    if domain:
-        dom = ctx.obj.get_domain(domain)
-
-    iarr, barr = meth(dom)
-    ctx.obj.put(initial, iarr)
-    ctx.obj.put(boundary, barr)
-    
-
-@cli.command()
-@click.argument("things", nargs=-1)
-@click.pass_context
-def ls(ctx, things):
-    '''
-    List the store store
-    '''
-    if not things:
-        things=["/"]
-
-    for thing in things:
-        got = ctx.obj.get(thing)
-        if isinstance(got, tuple):  # group
-            dirs, arrs, mds = got
-            print(f'store {ctx.obj.instore_name}: group {thing}:')
-            for dirname in dirs:
-                print(f'{dirname}/')
-            for arrname in arrs:
-                if thing == "/":
-                    lookfor = arrname
-                else:
-                    lookfor = thing + "/" + arrname
-                arr = ctx.obj.get(lookfor)
-                print (f'{lookfor} {arr.dtype} {arr.shape}')
-            return
-        # dataset or md, for now, assume the former
-        print (f'{type(got)} {got.shape} {thing}')
-
-
-@cli.command()
-@click.option("-d", "--domain", type=str, 
-              help="Use named dataset for the domain, (def: indices)")
-@click.option("-i","--initial", type=str,
-              help="Name initial value array")
-@click.option("-b","--boundary", type=str,
-              help="Name the boundary array")
-@click.option("-g","--generator", type=str, default=None,
-              help="Name the generator module")
-@click.argument("configs", nargs=-1)
-@click.pass_context
-def gen(ctx, domain, generator, initial, boundary, configs):
-    '''
-    Generate initial and boundary value arrays from a high-level
-    generator.
-    '''
-    if generator is None:
-        print("available geometry generators:")
-        for one in pochoir.gen.__dict__:
-            if one[0] == "_":
-                continue
-            print('\t'+one)
-        return
-
-    cfg = dict()
-    for config in configs:
-        cfg.update(json.loads(open(config,'rb').read().decode()))
-    cfg = pochoir.util.unitify(cfg)
-    meth = getattr(pochoir.gen, generator)
-
-    dom = ctx.obj.get_domain(domain)
-    iarr, barr = meth(dom, cfg)
-    params = dict(domain=domain, result="gen", config=','.join(configs))
-    ctx.obj.put(initial, iarr, **params)
-    ctx.obj.put(boundary, barr, **params)
-    
-
-@cli.command()
-@click.option("-d", "--domain", type=str, default=None,
-              help="Use named dataset for the domain, (def: indices)")
-@click.option("-r", "--result", type=str,
-              help="Name the storage result")
-@click.option("-t", "--temperature", type=str, default="89*K",
-              help="Temperature")
-@click.argument("potential")
-@click.pass_context
-def velo(ctx, domain, result, temperature, potential):
-    '''
-    Calculate a velocity field from a potential field
-    '''
-    temp = pochoir.arrays.fromstr1(temperature)[0]
-    pot = ctx.obj.get(potential)
-    dom = ctx.obj.get_domain(domain)
-
-    efield = pochoir.arrays.gradient(pot, dom.spacing)
-    emag = pochoir.arrays.vmag(efield)
-    mu = pochoir.lar.mobility(emag, temp)
-    velocity = [e*mu for e in efield]
-    params = dict(domain=domain, result="velo", temperature=temp)
-    ctx.obj.put(result, velocity, **params)
-
-
-
-@cli.command()
-@click.option("-d", "--domain", type=str, default=None,
-              help="Use named dataset for the domain, (def: indices)")
-@click.argument("scalar")
-@click.argument("vector")
-@click.pass_context
-def grad(ctx, domain, scalar, vector):
-    '''
-    Calculate the gradient of a scalar field.
-    '''
-    pot = ctx.obj.get(scalar)
-    if domain:
-        domain = ctx.obj.get_domain(domain)
-        spacing = domain.spacing
-    else:
-        spacing = None
-    field = pochoir.arrays.gradient(pot, spacing=spacing)
-    ctx.obj.put(vector, field, scalar=scalar, operation="grad")
-
-
-@cli.command()
 @click.option("-s","--shape", type=str, required=True,
               help="The number of grid points in each dimension")
 @click.option("-o","--origin", default=None, type=str,
               help="The spatial location of zero index grid point (def=0's)")
 @click.option("-S","--spacing", default=None, type=str,
               help="The grid spacing as scalar or vector (def=1's)")
-@click.argument("name")
+@click.option("-D", "--domain", type=str,
+              help="Generated domain name") 
 @click.pass_context
-def domain(ctx, shape, origin, spacing, name):
+def domain(ctx, shape, origin, spacing, domain):
     '''
-    Produce a "domain" and store it to the output dataset.
+    Produce a "domain" and store it to the named dataset.
 
     A domain describes a finite, uniform grid in N-D space in these
     terms:
@@ -232,79 +142,46 @@ def domain(ctx, shape, origin, spacing, name):
         origin = pochoir.arrays.zeros(ndim)
 
     dom = pochoir.domain.Domain(shape, spacing, origin)
-    ctx.obj.put_domain(name, dom)
-
-    
-@cli.command()
-@click.option("-d","--domain", default=None, type=str,
-              help="Use domain for the plot")
-@click.option("-s","--starts", default=None, type=str,
-              help="Name the starts array to store")
-@click.argument("points", nargs=-1)
-@click.pass_context
-def starts(ctx, domain, starts, points):
-    '''
-    Define drift path start points as N-d comma-separated vectors
-    '''
-    dom = ctx.obj.get_domain(domain)
-    shape = (len(points), len(dom.shape))
-    arr = pochoir.arrays.zeros(shape)
-    for ind, spoint in enumerate(points):
-        pt = pochoir.arrays.fromstr1(spoint)
-        arr[ind] = pt
-
-    ctx.obj.put(starts, arr, result="starts", domain=domain)
+    ctx.obj.put_domain(domain, dom)
 
 
 @cli.command()
-@click.option("-r", "--result", type=str,
-              help="Name the storage result")
-@click.option("-s", "--steps", type=str,
-              help="Give start,stop,step")
-@click.option("-d","--domain", default=None, type=str,
-              help="Use domain for the plot")
-# @click.option("-e","--engine", type=click.Choice(["scipy","torch"]),
-#               default="torch",
-#               help="Name the solver engine")
-@click.argument("starts")
-@click.argument("velocity")
+@click.option("-d", "--domain", type=str, 
+              help="Use named dataset for the domain, (def: indices)")
+@click.option("-I","--initial", type=str,
+              help="Initial value array to generate")
+@click.option("-B","--boundary", type=str,
+              help="Boundary array array to generate")
+@click.option("-g","--generator", type=str, default=None,
+              help="The generator method")
+@click.argument("configs", nargs=-1)
 @click.pass_context
-def drift(ctx, result, steps, domain, starts, velocity):
+def gen(ctx, domain, generator, initial, boundary, configs):
     '''
-    Calculate drift paths.
+    Generate initial and boundary value arrays from a high-level
+    generator.
     '''
-    engine = 'torch'
-    if ctx.obj.device == 'cpu':
-        engine = 'scipy'
+    if generator is None:
+        print("available geometry generators:")
+        for one in pochoir.gen.__dict__:
+            if one[0] == "_":
+                continue
+            print('\t'+one)
+        return
 
-    start, stop, step = pochoir.arrays.fromstr1(steps)
-    nsteps = int((stop-start)/step)
+    cfg = dict()
+    for config in configs:
+        cfg.update(json.loads(open(config,'rb').read().decode()))
+    cfg = pochoir.util.unitify(cfg)
+    meth = getattr(pochoir.gen, generator)
 
-    ticks = pochoir.arrays.linspace(start, stop, nsteps,
-                                    endpoint=False)
-
-    drifter = getattr(pochoir.drift, engine)
     dom = ctx.obj.get_domain(domain)
-    velo = ctx.obj.get(velocity)
-    velo = [v/s for v,s in zip(velo, dom.spacing)]
-
-    start_points = ctx.obj.get(starts)
-
-    paths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
-    for ind, point in enumerate(start_points):
-        print (f'path {ind} {point}')
-        path = drifter(dom, point, velo, ticks)
-        print(f'point: {point}, {path.shape}')
-        if engine=="torch":
-            paths[ind] = path.cpu().numpy()
-        else:
-            paths[ind]=path
-
-    params=dict(result="drift", domain=domain,
-                engine=engine, steps=steps)
-    ctx.obj.put(result, paths, **params)
+    iarr, barr = meth(dom, cfg)
+    params = dict(domain=domain, generator=generator,
+                  command="gen", config=','.join(configs))
+    ctx.obj.put(initial, iarr, taxon="initial", **params)
+    ctx.obj.put(boundary, barr, taxon="boundary", **params)
     
-
 @cli.command()
 @click.option("-i","--initial", type=str,
               help="Name initial value array")
@@ -370,78 +247,10 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
                 geom=fnames, domain=domain)
 
 @cli.command()
-@click.option("-s","--solution", type=str,
-              help="Name 2D solution value array")
 @click.option("-i","--initial", type=str,
-              help="Name 3D initial values array")
+              help="Input initial value array")
 @click.option("-b","--boundary", type=str,
-              help="Name 3D boundary array")
-@click.option("-d","--domain2d", type=str,
-              help="Name 2D domain")
-@click.option("-D","--domain3d", type=str,
-              help="Name 3D domain")
-@click.option("-x","--xcoord", type=str, default="17.5*mm",
-              help="Name distance from the center along Xaxis to setup BC")
-@click.argument("init_interpolated")
-@click.argument("bc_interpolated")
-@click.pass_context
-def bc_interp(ctx, solution, initial, boundary,
-        domain2d, domain3d, xcoord, init_interpolated,
-        bc_interpolated):
-    '''
-    Interpolate 2D solution into 3D boundary condition
-    '''
-    sol2D = ctx.obj.get(solution)
-    barr3D = ctx.obj.get(boundary)
-    arr3D = ctx.obj.get(initial)
-    dom2D = ctx.obj.get_domain(domain2d)
-    dom3D = ctx.obj.get_domain(domain3d)
-    xcoord = pochoir.util.unitify(xcoord)
-
-    from pochoir.bc_interp import interp
-
-    arr, barr= interp(sol2D, arr3D, barr3D, dom2D, dom3D, xcoord)
-    params = dict(operation="bc_interp",
-                  solution=solution, initial=initial, boundary=boundary,
-                          domain2d=domain2d, domain3d=domain3d, xcoord=xcoord)
-    ctx.obj.put(init_interpolated, arr, result="init_interpolated", **params)
-    ctx.obj.put(bc_interpolated, barr, result="bc_interpolated", **params)
-
-
-@cli.command()
-@click.option("-d","--domaine", type=str,
-              help="Name 3D domain for Ew calculation")
-@click.option("-D","--domaind", type=str,
-              help="Name 3D domain for drift calculation")
-@click.option("-s","--solutione", type=str,
-              help="Name 3D Ew solution")
-@click.option("-S","--solutiond", type=str,
-              help="Name 3D drift solution")
-@click.option("-v","--velocity", type=str,
-              help="Name velocity array")
-@click.argument("sr_result")
-@click.pass_context
-def srdot(ctx,domaine,domaind,solutione,solutiond,velocity,sr_result):
-    '''
-    Make dot product between drift paths and weighted fields for the Shockley–Ramo theorem
-    '''
-    dom_Ew = ctx.obj.get_domain(domaine)
-    dom_Drift = ctx.obj.get_domain(domaind)
-    pot = ctx.obj.get(solutione)
-    sol_Ew = pochoir.arrays.gradient(pot, dom_Ew.spacing)
-    sol_Drift = ctx.obj.get(solutiond)
-    velo = ctx.obj.get(velocity)
-    res= pochoir.srdot.dotprod(dom_Ew,dom_Drift,sol_Ew,sol_Drift,velo)
-    params = dict(operation="srdot",
-                      domaine=domaine,domaind=domaind,solutione=solutione,solutiond=solutiond,velocity=velocity)
-    ctx.obj.put(sr_result, res, result="sr_result", **params)
-
-
-@cli.command()
-@click.option("-i","--initial", type=str,
-              help="Name initial value array")
-@click.option("-b","--boundary", type=str,
-              help="Name the boundary array")
+              help="Input the boundary array")
 @click.option("-e","--edges", type=str,
               help="Comma separated list of 'fixed' or 'periodic' giving domain edge conditions")
 @click.option("--precision", type=float, default=0.0,
@@ -450,46 +259,288 @@ def srdot(ctx,domaine,domaind,solutione,solutiond,velocity,sr_result):
               help="Number of iterations before any check")
 @click.option("-n", "--nepochs", type=int, default=1,
               help="Limit number of epochs (def: one epoch)")
-@click.argument("solution")
-@click.argument("error")
+@click.option("-P", "--potential", type=str,
+              help="Output array holding solution for potential")
+@click.option("-I", "--increment", type=str,
+              help="Output array holding increment (error) on the solution")
 @click.pass_context
 def fdm(ctx, initial, boundary,
         edges, precision, epoch, nepochs,
-        solution, error):
+        potential, increment):
     '''
     Solve a Laplace boundary value problem with finite difference
     method storing the result as named solution.  The error names an
     output array to hold difference in last two iterations.
     '''
-    iarr = ctx.obj.get(initial)
-    barr = ctx.obj.get(boundary)
+    iarr, imd = ctx.obj.get(initial, True)
+    barr, bmd = ctx.obj.get(boundary, True)
+    domain = bmd['domain']      # forward
+
     bool_edges = [e.startswith("per") for e in edges.split(",")]
     if len(bool_edges) != iarr.ndim:
         raise ValueError("the number of periodic condition do not match problem dimensions")
+
     arr, err = pochoir.fdm.solve(iarr, barr, bool_edges,
                                  precision, epoch, nepochs)
-    params = dict(operation="fdm", 
+
+    params = dict(operation="fdm", domain=domain,
                   initial=initial, boundary=boundary,
                   edges=edges, epoch=epoch, nepochs=nepochs,
-                  precision=precision)
-    ctx.obj.put(solution, arr, result="solution", **params)
-    ctx.obj.put(error, err, result="error", **params)
+                  precision=precision, command="fdm")
+    ctx.obj.put(potential, arr, taxon="potential", **params)
+    ctx.obj.put(increment, err, taxon="increment", **params)
+
+
+
+@cli.command()
+@click.option("-t", "--temperature", type=str, default="89*K",
+              help="LAr temperature")
+@click.option("-p", "--potential", type=str,
+              help="Input potential array")
+@click.option("-V", "--velocity", type=str,
+              help="Output velocity array")
+@click.pass_context
+def velo(ctx, temperature, potential, velocity):
+    '''
+    Calculate a velocity field from a potential field
+    '''
+    temp = pochoir.arrays.fromstr1(temperature)[0]
+    pot, md = ctx.obj.get(potential, True)
+    domain = md['domain']
+    dom = ctx.obj.get_domain(domain)
+
+    efield = pochoir.arrays.gradient(pot, dom.spacing)
+    emag = pochoir.arrays.vmag(efield)
+    mu = pochoir.lar.mobility(emag, temp)
+    varr = [e*mu for e in efield]
+    params = dict(domain=domain, taxon="velocity", command="velo",
+                  potential=potential, temperature=temp)
+    ctx.obj.put(velocity, varr, **params)
+
+
+
+@cli.command()
+@click.option("-s", "--scalar", type=str,
+              help="Input scalar array")
+@click.option("-G", "--gradient", type=str,
+              help="Output gradient array")
+@click.pass_context
+def grad(ctx, scalar, gradient):
+    '''
+    Calculate the gradient of a scalar field.
+    '''
+    pot, md = ctx.obj.get(scalar, True)
+    domain = md['domain']
+    dom = ctx.obj.get_domain(domain)
+    field = pochoir.arrays.gradient(pot, spacing=dom.spacing)
+    ctx.obj.put(gradient, field, taxon="gradient",
+                domain=domain, scalar=scalar, command="grad")
+
 
     
-@cli.command("plot-image")
-@click.option("-d","--domain", default=None, type=str,
-              help="Use domain for the plot")
-@click.argument("dataset")
-@click.argument("plotfile")
+@cli.command()
+@click.option("-S","--starts", default=None, type=str,
+              help="Output starts points array")
+@click.argument("points", nargs=-1)
 @click.pass_context
-def plot_image(ctx, domain, dataset, plotfile):
+def starts(ctx, starts, points):
+    '''
+    Store "starting" points.
+    '''
+    npoints = len(points)
+    if not npoints:
+        raise ValueError("require at least one point")
+    points = [pochoir.arrays.fromstr1(p) for p in points]
+
+    # fixme: we say we don't allow numpy in main...
+    import numpy
+    arr = numpy.asarray(points)
+    ctx.obj.put(starts, arr, taxon="points", command="starts")
+
+
+@cli.command("drift")
+@click.option("-P", "--paths", type=str,
+              help="Output paths array")
+@click.option("--starts", type=str,
+              help="Input starting points")
+@click.option("--velocity", type=str,
+              help="Intput velocity array")
+@click.argument("steps", nargs=-1)
+@click.pass_context
+def drift(ctx, paths, starts, velocity, steps):
+    '''
+    Calculate drift paths.
+    '''
+    engine = 'torch'
+    if ctx.obj.device == 'cpu':
+        engine = 'scipy'
+
+    steps = ','.join(steps)
+    start, stop, step = pochoir.arrays.fromstr1(steps)
+    nsteps = int((stop-start)/step)
+
+    ticks = pochoir.arrays.linspace(start, stop, nsteps,
+                                    endpoint=False)
+
+    drifter = getattr(pochoir.drift, engine)
+    velo, md = ctx.obj.get(velocity, True)
+    domain = md['domain']
+    dom = ctx.obj.get_domain(domain)
+    velo = [v/s for v,s in zip(velo, dom.spacing)]
+
+    start_points = ctx.obj.get(starts)
+
+    # shape: (nstarts, nticks, ndims)
+    thepaths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
+    for ind, point in enumerate(start_points):
+        path = drifter(dom, point, velo, ticks)
+        if engine=="torch":
+            thepaths[ind] = path.cpu().numpy()
+        else:
+            thepaths[ind]=path
+
+    params=dict(taxon="paths", command="drift", domain=domain,
+                tstart=start, tstop=stop, nsteps=nsteps)
+    ctx.obj.put(paths, thepaths, **params)
+
+
+@cli.command("bc-interp")
+@click.option("-x","--xcoord", type=str, default="17.5*mm",
+              help="Name distance from the center along Xaxis to setup BC")
+
+@click.option("-p", "--potential2d", type=str,
+              help="The input 2D scalar potential array")
+@click.option("-i", "--initial3d", type=str,
+              help="The input 3D scalar initial values array")
+@click.option("-b", "--boundary3d", type=str,
+              help="The input 3D scalar boundary value array")
+
+@click.option("-I","--initial", type=str,
+              help="The output interpolated 3D initial values array")
+@click.option("-B","--boundary", type=str,
+              help="The output interpolated 3D boundary array")
+@click.pass_context
+def bc_interp(ctx, xcoord,                        # option
+              potential2d, initial3d, boundary3d, # input
+              initial, boundary                   # output
+              ):
+    '''
+    Interpolate 2D solution into 3D boundary condition
+    '''
+    sol2D, md2d = ctx.obj.get(potential2d, True)
+    barr3D, md3d = ctx.obj.get(boundary3d, True)
+    arr3D = ctx.obj.get(initial3d)
+
+    domain2d = md2d['domain']
+    domain3d = md3d['domain']
+    dom2D = ctx.obj.get_domain(domain2d)
+    dom3D = ctx.obj.get_domain(domain3d)
+    xcoord = pochoir.util.unitify(xcoord)
+
+    from pochoir.bc_interp import interp
+
+    arr, barr= interp(sol2D, arr3D, barr3D, dom2D, dom3D, xcoord)
+    params = dict(command="bc-interp",
+                  potential2d=potential2d, initial3d=initial3d, boundary3d=boundary3d,
+                  domain2d=domain2d, domain3d=domain3d, domain=domain3d,
+                  xcoord=xcoord)
+    ctx.obj.put(initial, arr, taxon="initial", **params)
+    ctx.obj.put(boundary, barr, taxon="boundary", **params)
+
+
+@cli.command()
+# @click.option("-d","--domaine", type=str,
+#               help="Name 3D domain for Ew calculation")
+# @click.option("-D","--domaind", type=str,
+#               help="Name 3D domain for drift calculation")
+@click.option("-w","--weighting", type=str,
+              help="The input weighting vector field")
+@click.option("-p","--paths", type=str,
+              help="The input drift paths array")
+# @click.option("-v","--velocity", type=str,
+#               help="The input velocity array")
+@click.option("-C", "--current", type=str,
+              help="The output array for the induced current")
+@click.pass_context
+def induce(ctx, weighting, paths, current):
+    '''
+    Calculating the induced current.
+    '''
+    raise RuntimeError("induce command is not ready yet")
+
+    wvec, wmd = ctx.object.get(weighting, True)
+    domain = wmd['domain']
+    dom = ctx.object.get_domain(domain)
+
+    the_paths, pmd = ctx.object.get(paths, True)
+    npaths, nsteps, ndim = the_paths.shape
+    ticks = pochoir.arrays.linspace(pmd['tstart'], pmd['tstop'],
+                                    pmd['nsteps'], endpoint=False)
+
+    currents = pochoir.arrays.zeros((npaths, nsteps))
+
+    for ind, one_path in enumerate(the_paths):
+        # 1) for each path, interpolate W vec to step point
+        # 2) dot product
+
+        cur = pochoir.srdot.induce(dom, wvec, one_path, ticks)
+
+
+    ctx.obj.put(current, res, command="induce", taxon="response",
+                domain=domain, paths=paths, weighting=weighting)
+
+
+    
+@cli.command()
+@click.option("-w","--weighting", type=str,
+              help="Input 3D weighting potential")
+@click.option("-p","--paths", type=str,
+              help="Input 3D drift paths")
+@click.option("-v","--velocity", type=str,
+              help="Input velocity array")
+@click.option("-C", "--current", type=str,
+              help="Output current array")
+@click.pass_context
+def srdot(ctx, weighting, paths, velocity, current):
+    '''
+    Apply Ramo theorem dot product.
+    '''
+    pot, potmd = ctx.obj.get(weighting, True)
+    pot_domain = potmd['domain']
+    dom_Ew = ctx.obj.get_domain(pot_domain)
+
+
+    sol_Ew = pochoir.arrays.gradient(pot, dom_Ew.spacing)
+    sol_Drift, pathmd = ctx.obj.get(paths, True)
+    path_domain = pathmd['domain']
+    dom_Drift = ctx.obj.get_domain(path_domain)
+
+    velo = ctx.obj.get(velocity)
+    res = pochoir.srdot.dotprod(dom_Ew, dom_Drift, sol_Ew, sol_Drift, velo)
+    params = dict(operation="srdot", 
+                  weight_domain=pot_domain, path_domain=path_domain,
+                  weighting=weighting, paths=paths, velocity=velocity)
+    ctx.obj.put(current, res, command="srdot", taxon="response", **params)
+
+
+
+@cli.command("plot-image")
+@click.option("-a", "--array", type=str, required=True,
+              help="Input array to plot")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
+@click.pass_context
+def plot_image(ctx, array, output):
     '''
     Visualize a dataset as 2D image
     '''
-    arr = ctx.obj.get(dataset)
+    arr, md = ctx.obj.get(array, True)
+    domain = md.get("domain")
     if domain:
-        domain = ctx.obj.get_domain(domain)
-    pochoir.plots.image(arr, plotfile, domain, dataset)
+        dom = ctx.obj.get_domain(domain)
+    pochoir.plots.image(arr, output, dom, array)
+
 
 @cli.command("plot-quiver")
 @click.option("-d", "--domain", type=str, default=None,
@@ -533,6 +584,65 @@ def export_vtk(ctx, name):
     arr = ctx.obj.get(name)
     scalars = {name: arr}
     pochoir.vtkexport.image3d(name, **scalars)
+
+
+@cli.command()
+@click.option("-d", "--domain", type=str, 
+              help="Use named dataset for the domain, (def: indices)")
+@click.option("-i","--initial", type=str,
+              help="Name initial value array")
+@click.option("-b","--boundary", type=str,
+              help="Name the boundary array")
+@click.argument("name")
+@click.pass_context
+def example(ctx, domain, initial, boundary, name):
+    '''
+    Generate a boundary and initial array example (try "list")
+    '''
+    if name == "list":
+        for one in dir(pochoir.examples):
+            if one.startswith("ex_"):
+                print(one[3:])
+        return
+
+    meth = getattr(pochoir.examples, "ex_" + name)
+
+    dom = None
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+
+    iarr, barr = meth(dom)
+    ctx.obj.put(initial, iarr)
+    ctx.obj.put(boundary, barr)
+    
+
+@cli.command()
+@click.argument("things", nargs=-1)
+@click.pass_context
+def ls(ctx, things):
+    '''
+    List the store store
+    '''
+    if not things:
+        things=["/"]
+
+    for thing in things:
+        got = ctx.obj.get(thing)
+        if isinstance(got, tuple):  # group
+            dirs, arrs, mds = got
+            print(f'store {ctx.obj.instore_name}: group {thing}:')
+            for dirname in dirs:
+                print(f'{dirname}/')
+            for arrname in arrs:
+                if thing == "/":
+                    lookfor = arrname
+                else:
+                    lookfor = thing + "/" + arrname
+                arr = ctx.obj.get(lookfor)
+                print (f'{lookfor} {arr.dtype} {arr.shape}')
+            return
+        # dataset or md, for now, assume the former
+        print (f'{type(got)} {got.shape} {thing}')
 
 
 def main():

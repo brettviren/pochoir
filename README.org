@@ -101,14 +101,22 @@ Options:
   --help                   Show this message and exit.
 
 Commands:
-  domain            Produce a "domain" and store it to the output dataset.
+  bc-interp         Interpolate 2D solution into 3D boundary condition
+  domain            Produce a "domain" and store it to the named dataset.
+  drift             Calculate drift paths.
   example           Generate a boundary and initial array example (try...
   export-vtk-image  Export a dataset to a vtk file of same name
   fdm               Solve a Laplace boundary value problem with finite...
+  gen               Generate initial and boundary value arrays from a...
   grad              Calculate the gradient of a scalar field.
+  induce            Calculating the induced current.
   init              Initialize a problem with a shape file.
+  ls                List the store store
+  plot-drift
   plot-image        Visualize a dataset as 2D image
   plot-quiver       Visualize a 2D or 3D vector field as a "quiver" plot.
+  starts            Store "starting" points.
+  velo              Calculate a velocity field from a potential field
   version           Print the version
 #+end_example
 
@@ -126,22 +134,54 @@ pochoir fdm --help
 
 #+RESULTS:
 #+begin_example
-Usage: pochoir fdm [OPTIONS] SOLUTION ERROR
+Usage: pochoir fdm [OPTIONS]
 
   Solve a Laplace boundary value problem with finite difference method
   storing the result as named solution.  The error names an output array to
   hold difference in last two iterations.
 
 Options:
-  -i, --initial TEXT     Name initial value array
-  -b, --boundary TEXT    Name the boundary array
+  -i, --initial TEXT     Input initial value array
+  -b, --boundary TEXT    Input the boundary array
   -e, --edges TEXT       Comma separated list of 'fixed' or 'periodic' giving
                          domain edge conditions
 
   --precision FLOAT      Finish when no changes larger than precision
   --epoch INTEGER        Number of iterations before any check
   -n, --nepochs INTEGER  Limit number of epochs (def: one epoch)
+  -P, --potential TEXT   Name of output array holding solution for potential
+  -I, --increment TEXT   Name of output array holding increment (error) on the
+                         solution
+
   --help                 Show this message and exit.
 #+end_example
 
-Again, see the [[file:manual.org][manual]] for more details.
+
+
+
+** Full chain
+
+Full chain is still a WIP but this provides one "full" test chain:
+
+#+begin_example
+  $ ./test/test-full.sh [store]
+#+end_example
+
+It is idempotent against the store so can be re-run and it won't
+repeat steps if output already exists.  Its precision is chosen low to
+make it run fast enough.
+
+#+begin_example
+❯ tree -L 1  store
+store
+├── boundary
+├── current
+├── domain
+├── increment
+├── initial
+├── paths
+├── potential
+├── starts
+├── velocity
+└── weighting
+#+end_example

@@ -47,6 +47,8 @@ def ex_dipolew1(dom):
 def ex_dipolew2(dom):
     return ex_dipole(dom, "w2")
 
+
+
 def ex_sandh(dom=None):
     '''
     A strip+hole 3D example

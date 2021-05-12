@@ -1,77 +1,136 @@
-#!/usr/bin/env bash
-
-# note, this test is intentionally imprecise so that it runs quickly
+#!/bin/bash
 
 set -e
-set -x
 
 tdir="$(dirname $(realpath $BASH_SOURCE))"
-sdir="$(dirname $tdir)"
 
-if [ -n "$1" ] ; then
-    POCHOIR_STORE="$1"
-    keep="yes"
-else
-    POCHOIR_STORE=$(mktemp -d /tmp/pochoir-full-test-XXXXX)
-    keep="no"
-fi
-export POCHOIR_STORE
-echo "$POCHOIR_STORE"
-export POCHOIR_CONFIG=$tdir
+export POCHOIR_STORE="${1:-store}"
 
-pochoir domain -s 84,56,1000 -S 0.03 pcb_domain
+want () {
+    target="$1" ; shift
+    if [ -f "$POCHOIR_STORE/${target}.npz" -o -f "$POCHOIR_STORE/${target}.npz" ] ; then
+        echo "have $target"
+        return
+    fi
+    echo "$@"
+    $@
+    if [ -f "$POCHOIR_STORE/${target}.npz" -o -f "$POCHOIR_STORE/${target}.npz" ] ; then
+        echo "made $target"
+        return
+    fi
+    exit -1
+}
+want_file () {
+    target="$1" ; shift
+    if [ -f "${target}" ] ; then
+        echo "have $target"
+        return
+    fi
+    echo "$@"
+    $@
+    if [ -f "${target}" ] ; then
+        echo "made $target"
+        return
+    fi
+    exit -1
+}
 
-pochoir gen -d pcb_domain \
-        -i pcb_init -b pcb_bound -g pcb_quarter \
-        $POCHOIR_CONFIG/example_gen_pcb_quarter_config.json
+## Domains ##
+do_domain () {
+    local name=$1 ; shift
+    local shape=$1; shift
+    local spacing=$1; shift
 
-pochoir fdm -n 10 --epoch=10 --precision 10 \
-        -b pcb_bound \
-        -i pcb_init \
-        -e per,per,per \
-        pcb_sol pcb_err
+    want domain/$name \
+         pochoir domain --domain domain/$name \
+         --shape=$shape --spacing $spacing
+}
+do_domain drift3d  84,56,1000  '0.03*mm'
 
-pochoir velo -d pcb_domain -r pcb_velo pcb_sol
-    
-pochoir starts -d pcb_domain -s pcb_starts 1.25,0.835,29.0 
-
-pochoir drift -r pcb_drift -s 0,180000,500 \
-        -d pcb_domain pcb_starts pcb_velo
-
-pochoir domain -s 1092,2500 -S 0.1 pcb_2D_domain
-
-pochoir gen -d pcb_2D_domain -i pcb_2D_init \
-        -b pcb_2D_bound -g pcb_2D \
-        $POCHOIR_CONFIG/example_gen_pcb_2D_config.json
-
-pochoir fdm -n 10 --epoch=10 --precision 0.2 \
-        -b pcb_2D_bound \
-        -i pcb_2D_init \
-        -e per,per \
-        pcb_2D_sol pcb_2D_err
-        
-pochoir domain -s 350,66,2000 -S 0.1 pcb_3Dstrips_domain
-
-pochoir gen -d pcb_3Dstrips_domain -i pcb_3Dstrips_init \
-        -b pcb_3Dstrips_bound -g pcb_3D \
-        $POCHOIR_CONFIG/example_gen_pcb_3D_config.json
-
-pochoir bc-interp -s pcb_2D_sol -i pcb_3Dstrips_init \
-        -b pcb_3Dstrips_bound \
-        -d pcb_2D_domain -D pcb_3Dstrips_domain \
-        pcb_3Dstrips_init_interp pcb_3Dstrips_bound_interp
-
-pochoir fdm -n 10 --epoch=10 --precision 0.2 \
-        -b pcb_3Dstrips_bound_interp \
-        -i pcb_3Dstrips_bound_interp \
-        -e per,per,per \
-        pcb_3Dstrips_sol pcb_3Dstrips_err
-
-if [ "$keep" = "no" ] ; then
-    rm -rf "$POCHOIR_STORE"
-fi
+# fixme: these weight* identifiers need to split up for N planes.
+do_domain weight2d 1092,2500   '0.1*mm'
+do_domain weight3d 350,66,2000 '0.1*mm'
 
 
+do_plot2d () {
+    local name=$1 ; shift
+    for flavor in $@
+    do
+        want_file ${flavor}-${name}.png \
+                  pochoir plot-image -a ${flavor}/${name} -o ${flavor}-${name}.png
+    done
+}
 
+
+## Initial/Boundary Value Arrays ##
+do_gen () {
+    local name=$1 ; shift
+    local geom=$1; shift
+    local gen="pcb_$geom"
+    local cfg="$tdir/example_gen_pcb_${geom}_config.json"
+
+    want initial/$name \
+         pochoir gen --generator $gen --domain domain/$name \
+         --initial initial/$name --boundary boundary/$name \
+         $cfg
+
+}
+do_gen drift3d quarter
+do_gen weight2d 2D
+do_gen weight3d 3D
+
+do_plot2d weight2d initial boundary
+
+
+
+## Fields
+do_fdm () {
+    local name=$1 ; shift
+    local nepochs=$1 ; shift
+    local epoch=$1 ; shift
+    local prec=$1 ; shift
+    local edges=$1 ; shift
+
+    want potential/$name \
+         pochoir fdm \
+         --nepochs $nepochs --epoch $epoch --precision $prec \
+         --edges $edges \
+         --initial initial/$name --boundary boundary/$name \
+         --potential potential/$name \
+         --increment increment/$name
+}
+do_fdm drift3d  20      20      0.2     per,per,fix
+do_fdm weight2d 10      10      0.002   per,fix
+do_plot2d weight2d potential increment
+
+# special step to form iva/bva from 2D solution
+want initial/weight3dfull \
+     pochoir bc-interp --xcoord '17.5*mm' \
+     --initial initial/weight3dfull --boundary boundary/weight3dfull \
+     --initial3d initial/weight3d --boundary3d boundary/weight3d \
+     --potential2d potential/weight2d
+
+do_fdm weight3dfull 10      10      0.2     fix,per,fix
+
+
+want velocity/drift3d \
+     pochoir velo --temperature '89*K' \
+     --potential potential/drift3d \
+     --velocity velocity/drift3d
+
+want starts/drift3d \
+     pochoir starts --starts starts/drift3d \
+     '1.25*mm,0.835*mm,29.0*mm'
+
+want paths/drift3d \
+     pochoir drift --starts starts/drift3d \
+     --velocity velocity/drift3d \
+     --paths paths/drift3d '0*us,200*us,0.1*us'
+
+
+want current/weight3dfull \
+     pochoir srdot --weighting potential/weight3dfull \
+     --paths paths/drift3d --velocity velocity/drift3d \
+     --current current/weight3dfull
 
 

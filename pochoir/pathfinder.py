@@ -49,7 +49,6 @@ def solve(domain,start,velocity,times):
     start = to_numpy(start)
     velocity = to_numpy(velocity)
     times = to_numpy(times)
-    print(times.shape)
     func = Simple(domain, velocity)
     return odeint(func,start,times,tfirst=True)
 

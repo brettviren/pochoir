@@ -54,12 +54,14 @@ class Main:
             return fname        # assume already a key
         return str(got.with_suffix(""))
 
-    def get(self, key):
+    def get(self, key, metadata=False):
         '''
         Return in input array at key.
+
+        If metadata is True return tuple (array, metadata)
         '''
         key = self.key(key)
-        return self.instore.get(key)
+        return self.instore.get(key, metadata)
 
     def get_domain(self, key):
         '''
@@ -68,11 +70,7 @@ class Main:
         Key should be for a group of datasets or directory of files
         describing a domain.
         '''
-        key = self.key(key)
-        _, md = self.instore.get(key, True)
-        # dom = Domain(self.get(key + "/shape"),
-        #              self.get(key + "/spacing"),
-        #              self.get(key + "/origin"))
+        _, md = self.get(key, True)
         shape = md.pop("shape")
         spacing = md.pop("spacing")
         origin = md.pop("origin", None)
@@ -86,9 +84,6 @@ class Main:
         Note, this saves to a group of datasets (directory of files)
         '''
         self.put(key, (), **dom.asdict)
-        # self.put(key + "/shape", dom.shape)
-        # self.put(key + "/spacing", dom.spacing)
-        # self.put(key + "/origin", dom.origin)
 
     def put(self, key, array, **metadata):
         '''
