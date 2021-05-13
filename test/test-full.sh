@@ -6,34 +6,8 @@ tdir="$(dirname $(realpath $BASH_SOURCE))"
 
 export POCHOIR_STORE="${1:-store}"
 
-want () {
-    target="$1" ; shift
-    if [ -f "$POCHOIR_STORE/${target}.npz" -o -f "$POCHOIR_STORE/${target}.npz" ] ; then
-        echo "have $target"
-        return
-    fi
-    echo "$@"
-    $@
-    if [ -f "$POCHOIR_STORE/${target}.npz" -o -f "$POCHOIR_STORE/${target}.npz" ] ; then
-        echo "made $target"
-        return
-    fi
-    exit -1
-}
-want_file () {
-    target="$1" ; shift
-    if [ -f "${target}" ] ; then
-        echo "have $target"
-        return
-    fi
-    echo "$@"
-    $@
-    if [ -f "${target}" ] ; then
-        echo "made $target"
-        return
-    fi
-    exit -1
-}
+source $tdir/helpers.sh
+
 
 ## Domains ##
 do_domain () {

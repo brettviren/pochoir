@@ -27,7 +27,6 @@ class Store:
     def dspath(self, key):
         if key in ["",".","/"]:
             return self.basedir
-
         maybe_dir = self.basedir.joinpath(key)
         if maybe_dir.is_dir():
             return maybe_dir
@@ -38,21 +37,24 @@ class Store:
         Get dataset and maybe metadata with key relative to store.
         '''
         dp = self.dspath(key)
-        if not dp.exists():
-            raise KeyError(f'no dataset for key "{key}", tried {dp.resolve()}')
         if dp.is_dir():
             return (tuple([f.stem for f in dp.glob("*") if f.is_dir()]),
                     tuple([f.stem for f in dp.glob("*"+self.dsext)]),
                     tuple([f.stem for f in dp.glob("*"+self.mdext)]))
 
-        arrs = numpy.load(dp.resolve())
-        arr = arrs[dp.stem]
-        if metadata:
-            mdpath = dp.parent.joinpath(dp.stem + self.mdext)
+        arr = None
+        md = None
+        npz = dp.parent.joinpath(dp.stem + self.dsext)
+        if npz.exists():
+            arrs = numpy.load(dp.resolve())
+            arr = arrs[dp.stem]
+        mdf = dp.parent.joinpath(dp.stem + self.mdext)
+        if mdf.exists():
             md = dict()
-            if mdpath.exists():
-                md = json.loads(open(mdpath.resolve(),'rb').read().decode())
-            return (arr, md)
+            if mdf.exists():
+                md = json.loads(open(mdf.resolve(),'rb').read().decode())
+        if metadata:
+            return arr, md
         return arr
 
     def put(self, key, value, **attrs):

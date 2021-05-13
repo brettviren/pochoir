@@ -26,7 +26,7 @@ def store(filename, mode="a", fmt=None):
     fmt = backend(filename, fmt)
     if 'hdf' in fmt:
         return hdf.Store(filename, mode)
-    if 'npz' in fmt:
+    if 'npz' in fmt or 'json' in fmt:
         return npz.Store(filename, mode)
     raise ValueError(f'unsupported file fromat {fmt}')
     

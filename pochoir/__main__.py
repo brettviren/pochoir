@@ -657,7 +657,7 @@ def ls(ctx, things):
         things=["/"]
 
     for thing in things:
-        got = ctx.obj.get(thing)
+        got, md = ctx.obj.get(thing, True)
         if isinstance(got, tuple):  # group
             dirs, arrs, mds = got
             print(f'store {ctx.obj.instore_name}: group {thing}:')
@@ -671,9 +671,11 @@ def ls(ctx, things):
                 arr = ctx.obj.get(lookfor)
                 print (f'{lookfor} {arr.dtype} {arr.shape}')
             return
-        # dataset or md, for now, assume the former
-        print (f'{type(got)} {got.shape} {thing}')
-
+        if hasattr(got, "shape"):
+            # dataset 
+            print (f'{type(got)} {got.shape} {thing}')
+        if md:
+            print(md)
 
 def main():
     cli(obj=None)
