@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import numpy
+
+# fixme: this can come from arrays.rgi()
 from scipy.interpolate import RegularGridInterpolator as RGI
 
 def interp(sol2D, arr3D, barr3D, dom2D,dom3D, xcoord):

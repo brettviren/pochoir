@@ -11,7 +11,7 @@ from .arrays import fromstr1, gradient
 class Domain:
     def __init__(self, shape, spacing, origin=None):
         '''
-        Create a domain from individual arrays
+        Create a domain.
 
         A domain describes by an N-d finite grid aligned with
         Cartesian coordinate axes.  For each dimension,

@@ -52,6 +52,15 @@ def to_torch(array):
     return torch.tensor(array)
     
 
+def to_like(array, like):
+    '''
+    Return data in array in the form like like.
+    '''
+    if isinstance(like, torch.Tensor):
+        return to_torch(array)
+    return numpy.array(array)
+
+
 def gradient(array, spacing = None):
     '''
     Return the finite difference gradient of the array.
@@ -118,3 +127,20 @@ def pad1(array):
     padded = mod.zeros(shape)
     padded[core_slices1(padded)] = array
     return padded
+
+def rgi(points, values):
+    '''
+    Return a "regular grid interpolator".
+
+    Points are an N-tuple of arrays, each holding the grid points on
+    one axis.
+
+    Values are the values on the en-meshgrid-ment of the grid points.
+
+    The array type of values determines the interpolation engine.
+    '''
+    if isinstance(values, torch.Tensor):
+        from torch_interpolations import RegularGridInterpolator as RGI
+    else:
+        from scipy.interpolate import RegularGridInterpolator as RGI
+    return RGI(points, values)

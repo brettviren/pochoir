@@ -449,44 +449,74 @@ def bc_interp(ctx, xcoord,                        # option
 
 
 @cli.command()
-# @click.option("-d","--domaine", type=str,
-#               help="Name 3D domain for Ew calculation")
-# @click.option("-D","--domaind", type=str,
-#               help="Name 3D domain for drift calculation")
+@click.option("-i", "--input", type=str, required=True,
+              help="The input paths array")
+@click.option("-t", "--translation", type=str, required=True,
+              help="A spacial vector along which to move the paths")
+@click.option("-O", "--output", type=str, required=True,
+              help="The output array name")
+@click.pass_context
+def move_paths(ctx, input, translation, output):
+    '''
+    Move paths along offset vector.
+    '''
+    arr, arrmd = ctx.obj.get(input, True)
+    try:
+        atype = arrmd['taxon']
+    except KeyError:
+        click.echo(f'array "{input}" has no type')
+        click.exit(-1)
+    
+    if atype != "paths":
+        click.echo(f'array "{input}" is not of type "paths"')
+        click.exit(-1)
+
+    translation = pochoir.arrays.fromstr1(translation)
+
+    from pochoir.arrays import to_like
+    newarr = arr + to_like(translation, arr)
+    ctx.obj.put(output, newarr, **arrmd)
+
+
+
+@cli.command()
+@click.option("-q","--charge", default=1.0,
+              help="The amount of drifting charge")
 @click.option("-w","--weighting", type=str,
-              help="The input weighting vector field")
+              help="The input scalar weighting potential")
 @click.option("-p","--paths", type=str,
               help="The input drift paths array")
-# @click.option("-v","--velocity", type=str,
-#               help="The input velocity array")
-@click.option("-C", "--current", type=str,
-              help="The output array for the induced current")
+@click.option("-O", "--output", type=str,
+              help="Output array holding induced current waveforms")
 @click.pass_context
-def induce(ctx, weighting, paths, current):
+def induce(ctx, charge, weighting, paths, output):
     '''
-    Calculating the induced current.
-    '''
-    raise RuntimeError("induce command is not ready yet")
+    Calculate induced current.
 
-    wvec, wmd = ctx.object.get(weighting, True)
+    The current is that induced by the given charge moving along the
+    paths and in the presence of a scalar weighting potential.
+    '''
+    wpot, wmd = ctx.obj.get(weighting, True)
     domain = wmd['domain']
-    dom = ctx.object.get_domain(domain)
+    dom = ctx.obj.get_domain(domain)
 
-    the_paths, pmd = ctx.object.get(paths, True)
+    the_paths, pmd = ctx.obj.get(paths, True)
     npaths, nsteps, ndim = the_paths.shape
     ticks = pochoir.arrays.linspace(pmd['tstart'], pmd['tstop'],
                                     pmd['nsteps'], endpoint=False)
 
-    currents = pochoir.arrays.zeros((npaths, nsteps))
+    rgi = pochoir.arrays.rgi(dom.linspaces, wpot)
+    Q = charge * rgi(the_paths)
+    assert len(Q.shape) == 2
+    assert Q.shape[0] == npaths
+    assert Q.shape[1] == nsteps
 
-    for ind, one_path in enumerate(the_paths):
-        # 1) for each path, interpolate W vec to step point
-        # 2) dot product
+    dQ = Q[:, 1:] - Q[:, :-1]
+    dT = ticks[1:] - ticks[:-1]
+    I = dQ/dT
 
-        cur = pochoir.srdot.induce(dom, wvec, one_path, ticks)
-
-
-    ctx.obj.put(current, res, command="induce", taxon="response",
+    ctx.obj.put(output, I, command="induce", taxon="current",
+                charge = charge,
                 domain=domain, paths=paths, weighting=weighting)
 
 

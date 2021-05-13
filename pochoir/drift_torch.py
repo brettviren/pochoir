@@ -6,9 +6,12 @@ Solve initial value problem to get drift paths using pytorch
 import torch
 import torch.nn as nn
 from .arrays import to_torch
+
+# fixme: this can come from arrays.rgi()
 import torch_interpolations as ti
 
 from torchdiffeq import odeint
+
 
 class Simple:
     '''
