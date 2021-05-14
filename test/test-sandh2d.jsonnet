@@ -16,21 +16,19 @@ local gndy = 0*cm;
 
 local efield = -500*V/cm;
 
-local fullwidth = 11*pitch;
-local fullheight = caty;
+local drift_width = pitch;
+local weight_width = 11*pitch;
+local full_height = caty;
 local gridspacing = 0.1*mm;
 //local gridspacing = 1*mm;
 
 local centerline = 0.0*mm;
 
-local domain_shape = [fullheight/gridspacing,
-                      fullwidth/gridspacing];
-
-local domain = {
-    shape: [std.parseInt("%d"%d) for d in domain_shape],
+local domain(width, height) = {
+    shape:[std.parseInt("%d"%(d/gridspacing)) for d in [height,width]],
     spacing: gridspacing,
-    origin: [0, -0.5*fullwidth],
-};
+    origin: [0, -0.5*width],
+};    
 
 local anode(name, loc, pot, isw) = {
     name: name,
@@ -46,7 +44,7 @@ local anode(name, loc, pot, isw) = {
 
 local plane(name, loc, pot, isw) = {
     name: name,
-    pitch: fullwidth,
+    pitch: if isw then weight_width else drift_width,
     thick: thick,
     gap: 0.0,
     location: loc,
@@ -82,5 +80,6 @@ local gen1(plns) = {
     "drift.json": gen1(drift_planes),
     "weight-ind.json": gen1(weight0_planes),
     "weight-col.json": gen1(weight1_planes),
-    "domain.json": domain,
+    "domains/drift.json": domain(drift_width, full_height),
+    "domains/weight.json": domain(weight_width, full_height),
 }

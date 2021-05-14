@@ -114,6 +114,7 @@ def solve(iarr, barr, periodic, prec, epoch, nepochs):
                 maxerr = amod.max(amod.abs(err))
                 #print(f'maxerr: {maxerr}')
                 if prec and maxerr < prec:
+                    print(f'fdm reach max precision: {prec} > {maxerr}')
                     return (iarr[core], err)
-
+    print(f'fdm reach max epoch {epoch} x {nepochs}, last prec {prec} < {maxerr}')
     return (iarr[core], err)

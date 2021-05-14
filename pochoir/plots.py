@@ -53,9 +53,7 @@ def image(arr, fname, domain, title="", scale="linear"):
     #plt.imshow(arr, interpolation='none', aspect='auto',
     #           extent = extent)
     plt.imshow(arr, interpolation='none', aspect='auto')
-
     plt.colorbar()
-
     savefig(fname)
 
 def quiver(varr, fname, domain):

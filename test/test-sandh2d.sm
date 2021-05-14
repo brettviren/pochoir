@@ -2,7 +2,21 @@
 store="test-sandh2d-store"
 plots="test-sandh2d-plots"
 
-FIELDS = ['drift', 'weight-ind', 'weight-col']
+DOMAINS = ['drift', 'width']
+FIELDS = {
+    'weight-ind': {
+        "domain": "weight",
+    },
+    'weight-col': {
+        "domain": "weight",
+    },
+    'drift': {
+        "domain": "drift",
+    }
+}
+WFIELDS = [n for n,d in FIELDS.items() if d['domain'] == 'weight']
+DFIELDS = [n for n,d in FIELDS.items() if d['domain'] == 'drift']
+
 TAXONS = ['initial', 'boundary', 'potential', 'increment']
 VALUE_TAXONS = ['initial', 'potential', 'increment']
 
@@ -10,18 +24,19 @@ rule configs:
     input:
         "test/test-sandh2d.jsonnet"
     output:
-        f'{store}/domain.json'
+        f'{store}/domains/drift.json',
+        f'{store}/domains/weight.json'
     shell: '''
-    mkdir -p {store} ;
+    mkdir -p {store}/domains ;
     jsonnet -m {store} {input}
     '''
 
 rule gen:
     input:
-        f'{store}/domain.json'
+        lambda w: '{store}/domains/{domain}.json'.format(store=store, **FIELDS[w.field])
     output:
         iva = f'{store}/initial/{{field}}.npz',
-        bva = f'{store}/boundary/{{field}}.npz',
+        bva = f'{store}/boundary/{{field}}.npz'
     shell: '''
     pochoir --store {store} \
     gen --generator sandh2d --domain {input} \
@@ -32,7 +47,6 @@ rule gen:
 
 rule fdm:
     input:
-        dom = f'{store}/domain.json',
         iva = f'{store}/initial/{{field}}.npz',
         bva = f'{store}/boundary/{{field}}.npz'
     output:
@@ -73,7 +87,8 @@ rule plots_signedlog:
 rule all:
     input:
         rules.configs.output,
-        expand(rules.gen.output, field=FIELDS),
+        expand(rules.gen.output, domain=["drift"], field=DFIELDS),
+        expand(rules.gen.output, domain=["weight"], field=WFIELDS),
         expand(rules.fdm.output, field=FIELDS),
         expand(rules.plots_linear.output,
                field=FIELDS, taxon=TAXONS),

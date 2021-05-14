@@ -576,20 +576,21 @@ def plot_image(ctx, array, output, scale):
 
 
 @cli.command("plot-quiver")
-@click.option("-d", "--domain", type=str, default=None,
-              help="Use named dataset for the domain, (def: indices)")
-@click.option("-s", "--step", type=int, default=1,
-              help="Set number of arrows to skip")
-@click.argument("dataset")
-@click.argument("plotfile")
+@click.option("-a", "--array", type=str, required=True,
+              help="Input array to plot")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
 @click.pass_context
-def plot_quiver(ctx, domain, step, dataset, plotfile):
+def plot_quiver(ctx, array, output):
     '''
     Visualize a 2D or 3D vector field as a "quiver" plot.
     '''
-    arr = ctx.obj.get(dataset)
-    dom = ctx.obj.get_domain(domain)
-    pochoir.plots.quiver(arr, plotfile, domain=dom, step=step)
+    arr, md = ctx.obj.get(array, True)
+    domain = md.get("domain")
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+    pochoir.plots.quiver(arr, output, domain=dom)
 
 
 @cli.command("plot-drift")
