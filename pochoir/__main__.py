@@ -560,8 +560,11 @@ def srdot(ctx, weighting, paths, velocity, current):
 @click.option("-o", "--output",
               type=click.Path(exists=False, dir_okay=False),
               help="Output graphics file")
+@click.option("-s", "--scale", default="linear",
+              type=click.Choice(["linear","signedlog"]),
+              help="Output graphics file")
 @click.pass_context
-def plot_image(ctx, array, output):
+def plot_image(ctx, array, output, scale):
     '''
     Visualize a dataset as 2D image
     '''
@@ -569,7 +572,7 @@ def plot_image(ctx, array, output):
     domain = md.get("domain")
     if domain:
         dom = ctx.obj.get_domain(domain)
-    pochoir.plots.image(arr, output, dom, array)
+    pochoir.plots.image(arr, output, dom, array, scale=scale)
 
 
 @cli.command("plot-quiver")
@@ -657,8 +660,8 @@ def ls(ctx, things):
         things=["/"]
 
     for thing in things:
-        got, md = ctx.obj.get(thing, True)
-        if isinstance(got, tuple):  # group
+        got = ctx.obj.get(thing, True)
+        if isinstance(got, tuple) and len(got) == 3:  # group
             dirs, arrs, mds = got
             print(f'store {ctx.obj.instore_name}: group {thing}:')
             for dirname in dirs:
@@ -671,11 +674,13 @@ def ls(ctx, things):
                 arr = ctx.obj.get(lookfor)
                 print (f'{lookfor} {arr.dtype} {arr.shape}')
             return
-        if hasattr(got, "shape"):
-            # dataset 
-            print (f'{type(got)} {got.shape} {thing}')
-        if md:
-            print(md)
+
+        arr,md = got
+        print(f'{thing}:')
+        if arr is not None:
+            print (f'\t{arr.shape} {arr.dtype}')
+        if md is not None:
+            print(f'\t{md}')
 
 def main():
     cli(obj=None)

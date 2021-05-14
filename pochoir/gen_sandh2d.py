@@ -3,6 +3,8 @@
 Generators of 2D strips-and-holes geometry (initial and boundary value
 arrays).
 
+This puts strips parallel to the spacial X-axis which is assumed to be
+axis=1 in the array.  That is, a plane occupies a row of the array.
 '''
 
 from math import floor
@@ -21,17 +23,19 @@ def generator(dom, cfg):
     barr = numpy.zeros(dom.shape, dtype=bool)
     
     bb = dom.bb
-    halfwidth = bb[1][0] - bb[0][0]
+    halfwidth = 0.5*(bb[1][1] - bb[0][1])
 
-    cl = numpy.array(cfg['centerline'])
+    clx = numpy.array(cfg['centerline'])
 
-    def rect(val, p1, p2):
+    def rect(p1, p2, val, mask):
         rectangle(dom, iarr,  val, p1, p2)
-        rectangle(dom, barr, True, p1, p2)
+        rectangle(dom, barr, mask, p1, p2)
 
     for plane in cfg['planes']:
+        name = plane['name']
         pitch = plane['pitch']
         thick = plane['thick']
+        diam = plane.get('diameter', None)
         gap = plane['gap']
         loc = plane['location'] # in Y
         pot = plane['voltage']  # bias V or 1.0/0.0 if isw
@@ -50,11 +54,24 @@ def generator(dom, cfg):
             if istrip and isw:
                 val = 0.0
 
-            # strip center line in x
-            scl = istrip * pitch
+            # strip center line origin
+            scl = numpy.array([loc, istrip * pitch - clx])
 
-            p1 = scl - numpy.array([-shalfwid, -0.5*thick + loc])
-            p2 = scl + numpy.array([ shalfwid,  0.5*thick + loc])
-            rect(pot, p1, p2)
+            edge = numpy.array([0.5*thick, shalfwid])
+            p1 = scl - edge
+            p2 = scl + edge
+            rect(p1, p2, val, True)
 
+            print(f'{name}: s#{istrip}({isw}) p={pitch} scl={scl} val={val} on {p1} -> {p2}')
+            if not diam:
+                continue
+
+            hole = numpy.array([0.5*thick, 0.5*diam])
+            p1 = scl - hole
+            p2 = scl + hole
+            # "erase" hole
+            rect(p1, p2, 0, False)
+
+    print('GEN ssandh2d totals:',numpy.sum(iarr), numpy.sum(barr))
+    print('GEN bb:',bb)
     return iarr, barr

@@ -24,11 +24,19 @@ def rectangle(dom, arr, value, point1, point2):
     '''
     Paint array inside rectangle defined by two boints with value.
     '''
-    point1 = dom.index(point1)
-    point2 = dom.index(point2)
+    # indices closest to points
+    ipt1 = numpy.array(dom.index(point1))
+    ipt2 = numpy.array(dom.index(point2))
 
-    s = [dom.crop(slice(point1[a], point2[a]), axis=a) for a in [0,1]]
-    #print (f'rectangle: {point1}->{point2}: {value} -> {s}')
+    # if points are w/in one grid spacing along an axis, set ipt2 to
+    # be one grid away from ipt1 along that axis.
+    s = list()
+    for axis in (0,1):
+        if ipt2[axis] == ipt1[axis]:
+            ipt2[axis] += 1
+        slc = dom.crop(slice(ipt1[axis], ipt2[axis]), axis=axis)
+        s.append(slc)
+    print (f'rectangle: {point1}->{point2}: {value} -> {s}')
     arr[tuple(s)] = value
 
 

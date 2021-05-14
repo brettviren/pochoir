@@ -71,6 +71,8 @@ class Main:
         describing a domain.
         '''
         _, md = self.get(key, True)
+        if md is None:
+            raise KeyError(f'no domain "{key}"')
         shape = md.pop("shape")
         spacing = md.pop("spacing")
         origin = md.pop("origin", None)

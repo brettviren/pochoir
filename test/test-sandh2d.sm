@@ -1,0 +1,82 @@
+
+store="test-sandh2d-store"
+plots="test-sandh2d-plots"
+
+FIELDS = ['drift', 'weight-ind', 'weight-col']
+TAXONS = ['initial', 'boundary', 'potential', 'increment']
+VALUE_TAXONS = ['initial', 'potential', 'increment']
+
+rule configs:
+    input:
+        "test/test-sandh2d.jsonnet"
+    output:
+        f'{store}/domain.json'
+    shell: '''
+    mkdir -p {store} ;
+    jsonnet -m {store} {input}
+    '''
+
+rule gen:
+    input:
+        f'{store}/domain.json'
+    output:
+        iva = f'{store}/initial/{{field}}.npz',
+        bva = f'{store}/boundary/{{field}}.npz',
+    shell: '''
+    pochoir --store {store} \
+    gen --generator sandh2d --domain {input} \
+    --initial initial/{wildcards.field} \
+    --boundary boundary/{wildcards.field} \
+    {store}/{wildcards.field}.json 
+    '''
+
+rule fdm:
+    input:
+        dom = f'{store}/domain.json',
+        iva = f'{store}/initial/{{field}}.npz',
+        bva = f'{store}/boundary/{{field}}.npz'
+    output:
+        pot = f'{store}/potential/{{field}}.npz',
+        inc = f'{store}/increment/{{field}}.npz'
+    params:
+        nepochs = 100,
+        epoch = 100,
+        prec = 0.01,
+        edges = "fixed,periodic"
+
+    shell: '''
+    pochoir --store {store} \
+    fdm --nepochs {params.nepochs} --epoch {params.epoch} \
+    --precision {params.prec} --edges {params.edges} \
+    --initial {input.iva} --boundary {input.bva} \
+    --potential {output.pot} --increment {output.inc}
+    '''
+
+rule plots_linear:
+    input:
+        f'{store}/{{taxon}}/{{field}}.npz'
+    output:
+        f'{plots}/{{taxon}}/{{field}}-linear.png'
+    shell: '''
+    pochoir --store {store} plot-image -s linear -a {input} -o {output}
+    '''
+
+rule plots_signedlog:
+    input:
+        f'{store}/{{taxon}}/{{field}}.npz'
+    output:
+        f'{plots}/{{taxon}}/{{field}}-signedlog.png'
+    shell: '''
+    pochoir --store {store} plot-image -s signedlog -a {input} -o {output}
+    '''
+
+rule all:
+    input:
+        rules.configs.output,
+        expand(rules.gen.output, field=FIELDS),
+        expand(rules.fdm.output, field=FIELDS),
+        expand(rules.plots_linear.output,
+               field=FIELDS, taxon=TAXONS),
+        expand(rules.plots_signedlog.output,
+               field=FIELDS, taxon=VALUE_TAXONS)
+

@@ -21,7 +21,7 @@ do
 
     for flavor in initial boundary
     do
-        want_file ${flavor}-${name}.png \
-                  pochoir plot-image -a ${flavor}/${name} -o ${flavor}-${name}.png
+        want_file ${flavor}-${name}.pdf \
+                  pochoir plot-image -a ${flavor}/${name} -o ${flavor}-${name}.pdf
     done
 done
