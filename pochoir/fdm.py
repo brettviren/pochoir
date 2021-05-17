@@ -19,3 +19,9 @@ except ImportError as err:
     print('warning: pochoir.fdm: no support for cupy')
     print(err)
 
+try:
+    from pochoir.fdm_cumba import solve as solve_cumba
+except ImportError as err:
+    print('warning: pochoir.fdm: no support for cumba (numba+cupy)')
+    print(err)
+

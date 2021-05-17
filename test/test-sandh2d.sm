@@ -4,7 +4,7 @@
 store="test-sandh2d-store"
 plots="test-sandh2d-plots"
 
-ENGINES = ['torch','cupy', 'numpy', 'numba']
+ENGINES = ['torch','cupy', 'numpy', 'numba', 'cumba']
 
 DOMAINS = ['drift', 'width']
 FIELDS = {

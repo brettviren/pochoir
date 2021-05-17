@@ -263,7 +263,8 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
               help="Number of iterations before any check")
 @click.option("-n", "--nepochs", type=int, default=1,
               help="Limit number of epochs (def: one epoch)")
-@click.option("--engine", type=click.Choice(["numpy", "numba", "torch", "cupy"]),
+@click.option("--engine",
+              type=click.Choice(["numpy", "numba", "torch", "cupy", "cumba"]),
               default="numpy",
               help="The FDM engine to use")
 @click.option("-P", "--potential", type=str,
