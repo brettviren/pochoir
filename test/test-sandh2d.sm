@@ -1,6 +1,10 @@
+#!/usr/bin/env snakemake
+# -*- snakemake -*-
 
 store="test-sandh2d-store"
 plots="test-sandh2d-plots"
+
+DEVICES = ['cpu','cuda']
 
 DOMAINS = ['drift', 'width']
 FIELDS = {

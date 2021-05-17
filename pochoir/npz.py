@@ -49,8 +49,8 @@ class Store:
             arrs = numpy.load(dp.resolve())
             arr = arrs[dp.stem]
         mdf = dp.parent.joinpath(dp.stem + self.mdext)
+        md = dict()
         if mdf.exists():
-            md = dict()
             if mdf.exists():
                 md = json.loads(open(mdf.resolve(),'rb').read().decode())
         if metadata:

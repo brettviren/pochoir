@@ -8,6 +8,7 @@ from . import units
 # Ideally, this is only module to import these two:
 import numpy
 import torch
+import cupy
 
 # import limited numpy api.
 # fixme: need to rethink this....
@@ -16,14 +17,23 @@ zeros = numpy.zeros
 linspace = numpy.linspace
 meshgrid = numpy.meshgrid
 
+def is_numpy(arr):
+    return isinstance(arr, numpy.ndarray)
+def is_torch(arr):
+    return isinstance(arr, torch.Tensor)
+def is_cupy(arr):
+    return isinstance(arr, cupy._core.core.ndarray)
+
 def module(array):
     '''
     Return either numpy or torch module matching type of array
     '''
-    if isinstance(array, torch.Tensor):
+    if is_torch(array):
         return torch
-    if isinstance(array, numpy.ndarray):
+    if is_numpy(array):
         return numpy
+    if is_cupy(array):
+        return cupy
 
 
 def fromstr1(string, dtype=float):
@@ -36,6 +46,16 @@ def fromstr1(string, dtype=float):
     return to_numpy(s)
 
 
+def to_device(arr, device):
+    '''
+    Return a new array on the given device.
+    '''
+    if device == 'numpy':
+        return to_numpy(arr)
+    arr = to_torch(arr, device)
+    #print (arr.device)
+    return arr
+
 def to_numpy(array):
     '''
     Return array or a new numpy array if not already one.
@@ -44,12 +64,11 @@ def to_numpy(array):
         return array.to('cpu').numpy()
     return numpy.array(array)
 
-
-def to_torch(array):
+def to_torch(array, device='cpu'):
     '''
     Return array or a new torch tensor if not already one.
     '''
-    return torch.tensor(array)
+    return torch.tensor(array, device=device)
     
 
 def to_like(array, like):
@@ -57,7 +76,7 @@ def to_like(array, like):
     Return data in array in the form like like.
     '''
     if isinstance(like, torch.Tensor):
-        return to_torch(array)
+        return to_torch(array, device=like.device)
     return numpy.array(array)
 
 
@@ -124,7 +143,7 @@ def pad1(array):
     '''
     mod = module(array)
     shape = [s+2 for s in array.shape]
-    padded = mod.zeros(shape)
+    padded = mod.zeros(shape, dtype=array.dtype)
     padded[core_slices1(padded)] = array
     return padded
 
@@ -144,3 +163,8 @@ def rgi(points, values):
     else:
         from scipy.interpolate import RegularGridInterpolator as RGI
     return RGI(points, values)
+
+def invert(arr):
+    if isinstance(arr, torch.Tensor):
+        return arr.logical_not()
+    return numpy.invert(arr)

@@ -4,6 +4,8 @@ CLI to pochoir
 
 pochoir [global options] <command> [command options] [arguments]
 
+FIXME: most of this verbiage belongs in the manual.
+
 Most commands here can be thought of nodes in a DAG joined by entries
 in the pochoir data store.
 
@@ -44,6 +46,7 @@ constient between CLI option names and store keys.  These are:
     - gradient :: a vector gradient field
 
     - points :: points in space
+
     - ...
 
 Additional metadata may be stored such as:
@@ -64,16 +67,14 @@ import pochoir
               help="File for primary data storage (input and maybe output)")
 @click.option("-o","--outstore",type=click.Path(),
               help="File for output (primary only input)")
-@click.option("-d","--device",type=click.Choice(["cpu","cuda"]),default='cpu',
-              help="Set device on which to calculate")
 @click.pass_context
-def cli(ctx, store, outstore, device):
+def cli(ctx, store, outstore):
     '''
     pochoir command line interface
     '''
     if not store:
         store = "."
-    ctx.obj = pochoir.main.Main(store, outstore, device)
+    ctx.obj = pochoir.main.Main(store, outstore)
 
 @cli.command()
 def version():
@@ -116,8 +117,9 @@ def domain(ctx, shape, origin, spacing, domain):
 
     Spatial units are applied by multiplying a unit symbol such as
 
-    - 10*mm
-    - 2.4*cm
+        - 10*mm
+
+        - 2.4*cm
 
     If no spatial unit is given, mm is assumed.
 
@@ -181,6 +183,7 @@ def gen(ctx, domain, generator, initial, boundary, configs):
                   command="gen", config=','.join(configs))
     ctx.obj.put(initial, iarr, taxon="initial", **params)
     ctx.obj.put(boundary, barr, taxon="boundary", **params)
+
     
 @cli.command()
 @click.option("-i","--initial", type=str,
@@ -259,29 +262,39 @@ def init(ctx, initial, boundary, ambient, domain, filenames):
               help="Number of iterations before any check")
 @click.option("-n", "--nepochs", type=int, default=1,
               help="Limit number of epochs (def: one epoch)")
+@click.option("--engine", type=click.Choice(["numpy", "numba", "torch", "cupy"]),
+              default="numpy",
+              help="The FDM engine to use")
 @click.option("-P", "--potential", type=str,
               help="Output array holding solution for potential")
 @click.option("-I", "--increment", type=str,
               help="Output array holding increment (error) on the solution")
 @click.pass_context
 def fdm(ctx, initial, boundary,
-        edges, precision, epoch, nepochs,
+        edges, precision, epoch, nepochs, engine,
         potential, increment):
     '''
-    Solve a Laplace boundary value problem with finite difference
-    method storing the result as named solution.  The error names an
-    output array to hold difference in last two iterations.
+    Apply finite-difference method.
+
+    Solve Laplace equation given initial/boundary value arrays to
+    produce a scalar potential array.
     '''
     iarr, imd = ctx.obj.get(initial, True)
     barr, bmd = ctx.obj.get(boundary, True)
-    domain = bmd['domain']      # forward
+    if not "domain" in bmd:
+        click.echo(f'failed to get domain for {boundary}')
+        click.echo(bmd)
+        return -1
+    domain = bmd['domain']
 
     bool_edges = [e.startswith("per") for e in edges.split(",")]
     if len(bool_edges) != iarr.ndim:
         raise ValueError("the number of periodic condition do not match problem dimensions")
 
-    arr, err = pochoir.fdm.solve(iarr, barr, bool_edges,
-                                 precision, epoch, nepochs)
+    import pochoir.fdm
+    solve = getattr(pochoir.fdm, f'solve_{engine}')
+    arr, err = solve(iarr, barr, bool_edges,
+                     precision, epoch, nepochs)
 
     params = dict(operation="fdm", domain=domain,
                   initial=initial, boundary=boundary,
@@ -365,15 +378,15 @@ def starts(ctx, starts, points):
               help="Input starting points")
 @click.option("--velocity", type=str,
               help="Intput velocity array")
+@click.option("--engine", type=click.Choice(["numpy", "torch"]),
+              default="numpy",
+              help="The FDM engine to use")
 @click.argument("steps", nargs=-1)
 @click.pass_context
-def drift(ctx, paths, starts, velocity, steps):
+def drift(ctx, paths, starts, velocity, engine, steps):
     '''
     Calculate drift paths.
     '''
-    engine = 'torch'
-    if ctx.obj.device == 'cpu':
-        engine = 'scipy'
 
     steps = ','.join(steps)
     start, stop, step = pochoir.arrays.fromstr1(steps)

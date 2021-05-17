@@ -23,7 +23,7 @@ class Main:
     See also __main__
     '''
 
-    def __init__(self, instore, outstore=None, device='cpu'):
+    def __init__(self, instore, outstore=None):
         '''
         Create a pochoir main.
 
@@ -40,7 +40,6 @@ class Main:
         else:
             self.instore = persist.store(instore, 'r')
             self.outstore = persist.store(outstore, 'w')
-        self.device = device
 
     @property
     def instore_name(self):
@@ -94,3 +93,5 @@ class Main:
         key = self.key(key)
         return self.outstore.put(key, array, **metadata)
 
+
+        
