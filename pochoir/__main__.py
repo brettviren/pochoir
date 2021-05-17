@@ -56,6 +56,7 @@ Additional metadata may be stored such as:
     - command :: name the command that produced the array
 '''
 
+import sys
 import json
 import click
 import pochoir
@@ -279,20 +280,26 @@ def fdm(ctx, initial, boundary,
     Solve Laplace equation given initial/boundary value arrays to
     produce a scalar potential array.
     '''
+    import pochoir.fdm
+    try:
+        solve = getattr(pochoir.fdm, f'solve_{engine}')
+    except AttributeError as err:
+        click.echo(f'no fdm solver engine {engine}')
+        click.echo(err)
+        sys.exit(-1)
+
     iarr, imd = ctx.obj.get(initial, True)
     barr, bmd = ctx.obj.get(boundary, True)
     if not "domain" in bmd:
         click.echo(f'failed to get domain for {boundary}')
         click.echo(bmd)
-        return -1
+        sys.exit(-1)
     domain = bmd['domain']
 
     bool_edges = [e.startswith("per") for e in edges.split(",")]
     if len(bool_edges) != iarr.ndim:
         raise ValueError("the number of periodic condition do not match problem dimensions")
 
-    import pochoir.fdm
-    solve = getattr(pochoir.fdm, f'solve_{engine}')
     arr, err = solve(iarr, barr, bool_edges,
                      precision, epoch, nepochs)
 
@@ -380,7 +387,7 @@ def starts(ctx, starts, points):
               help="Intput velocity array")
 @click.option("--engine", type=click.Choice(["numpy", "torch"]),
               default="numpy",
-              help="The FDM engine to use")
+              help="The IVP engine to use")
 @click.argument("steps", nargs=-1)
 @click.pass_context
 def drift(ctx, paths, starts, velocity, engine, steps):

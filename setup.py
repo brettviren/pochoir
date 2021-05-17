@@ -16,15 +16,22 @@ setuptools.setup(
     python_requires='>=3.5',
     install_requires=[
         "click",         # CLI
-        "h5py",          # support HDF5 files or
         "numpy",         # .npz, need numpy in general
-        "matplotlib",
-        "torch",         # for CPU/GPU
-        "desolver",      # candidate for rk, needs post-inst hack/fix 
-        "torchdiffeq",   # candidate for rk
-        "pyevtk",        # for optional export to VTK
-        "pytest",
     ],
+    extras_require={
+        "hdf5":"h5py",          # support HDF5 files or
+        "plots":"matplotlib",
+        "torch":[
+            "torch",         # for CPU/GPU
+            "torchdiffeq",   # torch rk
+        ],
+        "cupy":"cupy",
+        "numba":"numba",
+        "vtk":[
+            "pyevtk",        # for optional export to VTK
+            "pytest",
+        ]
+    },
     entry_points = dict(
         console_scripts = [
             'pochoir = pochoir.__main__:main',

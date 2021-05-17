@@ -75,7 +75,15 @@ cd pochoir
 pip install -e .
 #+end_example
 
-Additional commands may be needed to allow PyTorch to use your GPU.
+A number of "extra" support is included mostly for PyTorch, numba, or
+cupy to try to accelerate some bottlenecks on GPU or via
+multiprocessing.
+
+#+begin_example
+pip install -e .[torch,cupy,numba,vtk,plots,hdf5]
+#+end_example
+
+Additional setup and of course hardware may be needed to use GPU.
 
 
 * Usage
@@ -93,12 +101,9 @@ Usage: pochoir [OPTIONS] COMMAND [ARGS]...
   pochoir command line interface
 
 Options:
-  -s, --store PATH         File for primary data storage (input and maybe
-                           output)
-
-  -o, --outstore PATH      File for output (primary only input)
-  -d, --device [cpu|cuda]  Set device on which to calculate
-  --help                   Show this message and exit.
+  -s, --store PATH     File for primary data storage (input and maybe output)
+  -o, --outstore PATH  File for output (primary only input)
+  --help               Show this message and exit.
 
 Commands:
   bc-interp         Interpolate 2D solution into 3D boundary condition
@@ -106,15 +111,17 @@ Commands:
   drift             Calculate drift paths.
   example           Generate a boundary and initial array example (try...
   export-vtk-image  Export a dataset to a vtk file of same name
-  fdm               Solve a Laplace boundary value problem with finite...
+  fdm               Apply finite-difference method.
   gen               Generate initial and boundary value arrays from a...
   grad              Calculate the gradient of a scalar field.
-  induce            Calculating the induced current.
+  induce            Calculate induced current.
   init              Initialize a problem with a shape file.
   ls                List the store store
+  move-paths        Move paths along offset vector.
   plot-drift
   plot-image        Visualize a dataset as 2D image
   plot-quiver       Visualize a 2D or 3D vector field as a "quiver" plot.
+  srdot             Apply Ramo theorem dot product.
   starts            Store "starting" points.
   velo              Calculate a velocity field from a potential field
   version           Print the version
@@ -136,30 +143,73 @@ pochoir fdm --help
 #+begin_example
 Usage: pochoir fdm [OPTIONS]
 
-  Solve a Laplace boundary value problem with finite difference method
-  storing the result as named solution.  The error names an output array to
-  hold difference in last two iterations.
+  Apply finite-difference method.
+
+  Solve Laplace equation given initial/boundary value arrays to produce a
+  scalar potential array.
 
 Options:
-  -i, --initial TEXT     Input initial value array
-  -b, --boundary TEXT    Input the boundary array
-  -e, --edges TEXT       Comma separated list of 'fixed' or 'periodic' giving
-                         domain edge conditions
+  -i, --initial TEXT              Input initial value array
+  -b, --boundary TEXT             Input the boundary array
+  -e, --edges TEXT                Comma separated list of 'fixed' or
+                                  'periodic' giving domain edge conditions
 
-  --precision FLOAT      Finish when no changes larger than precision
-  --epoch INTEGER        Number of iterations before any check
-  -n, --nepochs INTEGER  Limit number of epochs (def: one epoch)
-  -P, --potential TEXT   Name of output array holding solution for potential
-  -I, --increment TEXT   Name of output array holding increment (error) on the
-                         solution
+  --precision FLOAT               Finish when no changes larger than precision
+  --epoch INTEGER                 Number of iterations before any check
+  -n, --nepochs INTEGER           Limit number of epochs (def: one epoch)
+  --engine [numpy|numba|torch|cupy]
+                                  The FDM engine to use
+  -P, --potential TEXT            Output array holding solution for potential
+  -I, --increment TEXT            Output array holding increment (error) on
+                                  the solution
 
-  --help                 Show this message and exit.
+  --help                          Show this message and exit.
 #+end_example
 
 
 
 
-** Full chain
+** Full tests
+
+*** Tutorial
+
+The [[./tutorial]], when it is ready gives a full-featured walk through.
+
+*** Snakemake driven test
+
+A Snakemake driver exercises a test:
+
+#+begin_example
+❯ snakemake -jall -p -s test/test-sandh2d.sm all
+❯ tree -L 1 test-sandh2d-store/
+test-sandh2d-store/
+├── cupy
+├── domains
+├── drift.json
+├── numba
+├── numpy
+├── torch
+├── weight-col.json
+└── weight-ind.json
+❯ tree -L 2 test-sandh2d-plots/
+test-sandh2d-plots/
+├── cupy
+│   └── initial
+├── numba
+│   └── initial
+├── numpy
+│   └── initial
+└── torch
+    ├── boundary
+    └── initial
+#+end_example
+
+As the plots directory listing implies, this test tries to run the
+various GPU FDM variants.  If any are missing expect to see errors in
+snakemake and gaps in the output.  This test is idempotent so should
+when rerun may not do much.
+
+*** 2D/3D test
 
 Full chain is still a WIP but this provides one "full" test chain:
 

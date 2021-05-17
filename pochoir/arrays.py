@@ -7,8 +7,6 @@ from . import units
 
 # Ideally, this is only module to import these two:
 import numpy
-import torch
-import cupy
 
 # import limited numpy api.
 # fixme: need to rethink this....
@@ -20,8 +18,16 @@ meshgrid = numpy.meshgrid
 def is_numpy(arr):
     return isinstance(arr, numpy.ndarray)
 def is_torch(arr):
+    try:
+        import torch
+    except ImportError:
+        return False
     return isinstance(arr, torch.Tensor)
 def is_cupy(arr):
+    try:
+        import cupy
+    except ImportError:
+        return False
     return isinstance(arr, cupy._core.core.ndarray)
 
 def module(array):
@@ -29,10 +35,12 @@ def module(array):
     Return either numpy or torch module matching type of array
     '''
     if is_torch(array):
+        import torch
         return torch
     if is_numpy(array):
         return numpy
     if is_cupy(array):
+        import cupy
         return cupy
 
 
@@ -60,14 +68,19 @@ def to_numpy(array):
     '''
     Return array or a new numpy array if not already one.
     '''
-    if isinstance(array, torch.Tensor):
+    if is_numpy(array):
+        return numpy.array(array)
+    if is_torch(array):
         return array.to('cpu').numpy()
-    return numpy.array(array)
+    if is_cupy(array):
+        return array.get()
+    return numpy.array(array)   # hail mary
 
 def to_torch(array, device='cpu'):
     '''
     Return array or a new torch tensor if not already one.
     '''
+    import torch
     return torch.tensor(array, device=device)
     
 
@@ -75,7 +88,7 @@ def to_like(array, like):
     '''
     Return data in array in the form like like.
     '''
-    if isinstance(like, torch.Tensor):
+    if is_torch(like):
         return to_torch(array, device=like.device)
     return numpy.array(array)
 
@@ -97,7 +110,7 @@ def gradient(array, spacing = None):
         print(spacing)
         gvec = [numpy.array(v/s) for v,s in zip(gvec, spacing)]
     g = numpy.array(gvec)
-    return torch.tensor(g, device=array.device)
+    return to_torch(g, device=array.device)
     
 def vmag(vfield):
     '''
@@ -116,8 +129,9 @@ def dup(array):
     '''
     Return a copy of the array
     '''
-    if isinstance(array, torch.Tensor):
-        return torch.clone(array)
+    if is_torch(array):
+        import torch
+        return torch.clone(array, requires_grad=False)
     return numpy.copy(array)
 
 
@@ -158,13 +172,13 @@ def rgi(points, values):
 
     The array type of values determines the interpolation engine.
     '''
-    if isinstance(values, torch.Tensor):
+    if is_torch(values):
         from torch_interpolations import RegularGridInterpolator as RGI
     else:
         from scipy.interpolate import RegularGridInterpolator as RGI
     return RGI(points, values)
 
 def invert(arr):
-    if isinstance(arr, torch.Tensor):
+    if is_torch(arr):
         return arr.logical_not()
     return numpy.invert(arr)
