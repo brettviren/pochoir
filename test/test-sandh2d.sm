@@ -4,7 +4,7 @@
 store="test-sandh2d-store"
 plots="test-sandh2d-plots"
 
-DEVICES = ['cpu','cuda']
+ENGINES = ['torch','cupy', 'numpy', 'numba']
 
 DOMAINS = ['drift', 'width']
 FIELDS = {
@@ -39,23 +39,23 @@ rule gen:
     input:
         lambda w: '{store}/domains/{domain}.json'.format(store=store, **FIELDS[w.field])
     output:
-        iva = f'{store}/initial/{{field}}.npz',
-        bva = f'{store}/boundary/{{field}}.npz'
+        iva = f'{store}/{{engine}}/initial/{{field}}.npz',
+        bva = f'{store}/{{engine}}/boundary/{{field}}.npz'
     shell: '''
     pochoir --store {store} \
     gen --generator sandh2d --domain {input} \
-    --initial initial/{wildcards.field} \
-    --boundary boundary/{wildcards.field} \
+    --initial {output.iva} \
+    --boundary {output.bva} \
     {store}/{wildcards.field}.json 
     '''
 
 rule fdm:
     input:
-        iva = f'{store}/initial/{{field}}.npz',
-        bva = f'{store}/boundary/{{field}}.npz'
+        iva = f'{store}/{{engine}}/initial/{{field}}.npz',
+        bva = f'{store}/{{engine}}/boundary/{{field}}.npz'
     output:
-        pot = f'{store}/potential/{{field}}.npz',
-        inc = f'{store}/increment/{{field}}.npz'
+        pot = f'{store}/{{engine}}/potential/{{field}}.npz',
+        inc = f'{store}/{{engine}}/increment/{{field}}.npz'
     params:
         nepochs = 100,
         epoch = 100,
@@ -64,7 +64,8 @@ rule fdm:
 
     shell: '''
     pochoir --store {store} \
-    fdm --nepochs {params.nepochs} --epoch {params.epoch} \
+    fdm --engine {wildcards.engine} \
+    --nepochs {params.nepochs} --epoch {params.epoch} \
     --precision {params.prec} --edges {params.edges} \
     --initial {input.iva} --boundary {input.bva} \
     --potential {output.pot} --increment {output.inc}
@@ -72,18 +73,18 @@ rule fdm:
 
 rule plots_linear:
     input:
-        f'{store}/{{taxon}}/{{field}}.npz'
+        f'{store}/{{engine}}/{{taxon}}/{{field}}.npz'
     output:
-        f'{plots}/{{taxon}}/{{field}}-linear.png'
+        f'{plots}/{{engine}}/{{taxon}}/{{field}}-linear.png'
     shell: '''
     pochoir --store {store} plot-image -s linear -a {input} -o {output}
     '''
 
 rule plots_signedlog:
     input:
-        f'{store}/{{taxon}}/{{field}}.npz'
+        f'{store}/{{engine}}/{{taxon}}/{{field}}.npz'
     output:
-        f'{plots}/{{taxon}}/{{field}}-signedlog.png'
+        f'{plots}/{{engine}}/{{taxon}}/{{field}}-signedlog.png'
     shell: '''
     pochoir --store {store} plot-image -s signedlog -a {input} -o {output}
     '''
@@ -91,11 +92,13 @@ rule plots_signedlog:
 rule all:
     input:
         rules.configs.output,
-        expand(rules.gen.output, domain=["drift"], field=DFIELDS),
-        expand(rules.gen.output, domain=["weight"], field=WFIELDS),
-        expand(rules.fdm.output, field=FIELDS),
+        expand(rules.gen.output, domain=["drift"],
+               field=DFIELDS, engine=ENGINES),
+        expand(rules.gen.output, domain=["weight"],
+               field=WFIELDS, engine=ENGINES),
+        expand(rules.fdm.output, field=FIELDS, engine=ENGINES),
         expand(rules.plots_linear.output,
-               field=FIELDS, taxon=TAXONS),
+               field=FIELDS, engine=ENGINES, taxon=TAXONS),
         expand(rules.plots_signedlog.output,
-               field=FIELDS, taxon=VALUE_TAXONS)
+               field=FIELDS, engine=ENGINES, taxon=VALUE_TAXONS)
 
