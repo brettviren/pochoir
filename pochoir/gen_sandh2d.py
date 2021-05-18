@@ -13,14 +13,36 @@ from .shapes import rectangle
 
 # note: also see gen_sandh.gen_twod
 
+def gradient(shape, v0, v1):
+    '''
+    Paint and dirty gradient on iarr.
+
+    arr[0] has value v0 and arr[-1] has v1.
+    '''
+    print(f"painting gradient: {v0} -> {v1} for {shape}")
+    g = numpy.linspace(v0, v1, shape[0], endpoint=False)
+    arr = numpy.vstack([g]*shape[1]).T
+    print(f"gradient shape: {arr.shape}")
+    return arr
+
+
 def generator(dom, cfg):
     '''
     Return iva/bva for sandh 2d
 
     '''
+    planes = cfg['planes']
+    isw = any([p.get("weighting", False) for p in planes])
 
-    iarr = numpy.zeros(dom.shape)
+    if not isw:
+        planes.sort(key=lambda p: p['location'])
+        cat_v = planes[-1]["voltage"]
+        gnd_v = planes[0]["voltage"]
+        grad = gradient(dom.shape, gnd_v, cat_v)
+
+    #iarr = numpy.zeros(dom.shape)
     barr = numpy.zeros(dom.shape, dtype=bool)
+    iarr = numpy.zeros(dom.shape, dtype="float32")
     
     bb = dom.bb
     halfwidth = 0.5*(bb[1][1] - bb[0][1])
@@ -31,13 +53,18 @@ def generator(dom, cfg):
         rectangle(dom, iarr,  val, p1, p2)
         rectangle(dom, barr, mask, p1, p2)
 
-    for plane in cfg['planes']:
+
+    for plane in planes:
+        def locit(what):
+            return round(plane[what]/dom.spacing[0])*dom.spacing[0]
+
         name = plane['name']
         pitch = plane['pitch']
         thick = plane['thick']
         diam = plane.get('diameter', None)
         gap = plane['gap']
-        loc = plane['location'] # in Y
+        loc = locit('location') # in Y
+        print(f'{name}: {loc}')
         pot = plane['voltage']  # bias V or 1.0/0.0 if isw
         isw = plane['weighting'] # is weighting bool
 
@@ -74,4 +101,8 @@ def generator(dom, cfg):
 
     print('GEN ssandh2d totals:',numpy.sum(iarr), numpy.sum(barr))
     print('GEN bb:',bb)
+    if not isw:
+        notbarr = numpy.invert(barr)
+        iarr = iarr + notbarr*grad
+
     return iarr, barr

@@ -10,6 +10,12 @@ except ImportError as err:
     print('warning: pochoir.drift: no support for numpy')
     print(err)
 
+try:
+    from .drift_numpyold import solve as solve_numpyold
+except ImportError as err:
+    print('warning: pochoir.drift: no support for numpyold')
+    print(err)
+
 
 # a different implementation with scipy
 from .pathfinder import solve as solve_scipy

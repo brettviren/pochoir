@@ -4,7 +4,7 @@ Solve initial value problem to get drift paths using pytorch
 '''
 
 import numpy
-from scipy.integrate import solve_ivp
+from scipy.integrate import odeint
 from scipy.interpolate import RegularGridInterpolator as RGI
 from pochoir import units
 
@@ -21,7 +21,6 @@ class Simple:
         spacing = domain.spacing
         origin = domain.origin
         points = list()
-        self.domain = domain
 
         self.calls = 0
 
@@ -36,26 +35,20 @@ class Simple:
             RGI(points, component)
             for component in vfield]
 
-    def __call__(self, time, pos):
+    def __call__(self, tpoint, tick):
         '''
         Return velocity vector at location (time independent).
+
+        Note: scipy version wants point as first, time as second
+        argument.  This differs from torch version.
         '''
-        print(f'drift:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm')
-        velo = numpy.zeros_like(pos)
+        print(f'drift: {tpoint} {tick}')
+        velo = numpy.zeros_like(tpoint)
         speed_unit = units.mm/units.us
         for ind, inter in enumerate(self.interp):
-            try:
-                got = inter([pos])
-            except ValueError as err:
-                print(f'v_{ind}(t={time/units.us:.3f}us, r=@{pos/units.mm} mm)')
-                o = self.domain.origin
-                e = o + self.domain.spacing * self.domain.shape
-                print(f'{o/units.mm} mm -> {e/units.mm} mm')
-
-                raise
-            got = got[0]
-            print(f'\tv_{ind}(t={time/units.us:.3f}us, r=@{pos}) = {got/speed_unit:.3f} mm/us')
-            velo[ind] = got
+            got = inter([tpoint])
+            print(f'\tv_{ind}(t={tick/units.us}us, r=@{tpoint}) = {got/speed_unit} mm/us')
+            velo[ind] = got[0]
 
         self.calls += 1
         return velo
@@ -70,11 +63,6 @@ def solve(domain, start, velocity, times):
     times = numpy.array(times)
     print(f'start @{start}, times={times/units.us}')
     func = Simple(domain, velocity)
-    #res = odeint(func, start, times, rtol=0.01, atol=0.01)
-    res = solve_ivp(func, [times[0], times[-1]], start, t_eval=times,
-                    rtol=0.0001, atol=0.0001,
-                    method='Radau',
-                    #max_step=0.1
-                    )
+    res = odeint(func, start, times, rtol=0.01, atol=0.01)
     print(f"function called {func.calls} times")
-    return res['y'].T
+    return res

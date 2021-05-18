@@ -47,14 +47,18 @@ def image(arr, fname, domain, title="", scale="linear"):
 
     plt.clf()
 
-    extent = None
-    if domain:
-        extent = domain.imshow_extent()
+    # extent = None
+    # if domain:
+    #     extent = domain.imshow_extent()
+    #X,Y = domain.meshgrid
+    Y,X = numpy.meshgrid(*domain.linspaces, indexing="ij")
+
     plt.title(title)
     print(f'plotting: {arr.shape} {fname}')
     #plt.imshow(arr, interpolation='none', aspect='auto',
     #           extent = extent)
-    plt.imshow(arr, interpolation='none', aspect='auto')
+    plt.pcolormesh(X, Y, arr, shading='auto')
+    #plt.imshow(arr, interpolation='none', aspect='auto')
     plt.colorbar()
     savefig(fname)
 

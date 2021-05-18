@@ -4,12 +4,17 @@
 store="test-sandh2d-store"
 plots="test-sandh2d-plots"
 
-ENGINES = ['torch','cupy', 'numpy', 'numba', 'cumba']
-
 DOMAINS = ['drift', 'width']
+# fixme: generate fdm as .json config...
 FIELDS = {
     'weight-ind': {
         "domain": "weight",
+        "fdm": dict(
+            nepochs = 100,
+            epoch = 100,
+            prec = 0.01,
+            edges = "fixed,periodic"
+        ),
     },
     'weight-col': {
         "domain": "weight",
@@ -18,6 +23,8 @@ FIELDS = {
         "domain": "drift",
     }
 }
+
+
 WFIELDS = [n for n,d in FIELDS.items() if d['domain'] == 'weight']
 DFIELDS = [n for n,d in FIELDS.items() if d['domain'] == 'drift']
 
@@ -39,8 +46,8 @@ rule gen:
     input:
         lambda w: '{store}/domains/{domain}.json'.format(store=store, **FIELDS[w.field])
     output:
-        iva = f'{store}/{{engine}}/initial/{{field}}.npz',
-        bva = f'{store}/{{engine}}/boundary/{{field}}.npz'
+        iva = f'{store}/initial/{{field}}.npz',
+        bva = f'{store}/boundary/{{field}}.npz'
     shell: '''
     pochoir --store {store} \
     gen --generator sandh2d --domain {input} \
@@ -49,71 +56,66 @@ rule gen:
     {store}/{wildcards.field}.json 
     '''
 
-fdm_params = {
-    "drift": dict(
-        nepochs = 100,
-        epoch = 100,
-        prec = 0.01,
-        edges = "fixed,periodic"
-    ),
-    "weight-col": dict(
-        nepochs = 100,
-        epoch = 100,
-        prec = 0.01,
-        edges = "fixed,periodic"
-    ),
-    "weight-ind": dict(
-        nepochs = 100,
-        epoch = 100,
-        prec = 0.01,
-        edges = "fixed,periodic"
-    ),
-}
-    
 
+
+def fdm_cfg(w):
+    fname = '{store}/{field}.json'.format(store=store, field=w.field)
+    return json.loads(open(fname).read())['fdm']
 
 rule fdm:
     input:
-        iva = f'{store}/{{engine}}/initial/{{field}}.npz',
-        bva = f'{store}/{{engine}}/boundary/{{field}}.npz'
+        cfg = lambda w: '{store}/domains/{domain}.json'.format(store=store, **FIELDS[w.field]),
+        iva = f'{store}/initial/{{field}}.npz',
+        bva = f'{store}/boundary/{{field}}.npz'
     output:
-        pot = f'{store}/{{engine}}/potential/{{field}}.npz',
-        inc = f'{store}/{{engine}}/increment/{{field}}.npz'
+        pot = f'{store}/potential/{{field}}.npz',
+        inc = f'{store}/increment/{{field}}.npz'
     params:
-        p = lambda w: fdm_params[w.field]
-
+        p = fdm_cfg,
+        engine = "cupy"
     shell: '''
     pochoir --store {store} \
-    fdm --engine {wildcards.engine} \
+    fdm --engine {params.engine} \
     --nepochs {params.p[nepochs]} --epoch {params.p[epoch]} \
     --precision {params.p[prec]} --edges {params.p[edges]} \
     --initial {input.iva} --boundary {input.bva} \
     --potential {output.pot} --increment {output.inc}
     '''
 
+rule field_grad:
+    input:
+        f'{store}/potential/{{field}}.npz'
+    output:
+        arr = f'{store}/potential/{{field}}-mag.npz',
+        plt = f'{plots}/potential/{{field}}-mag.png'
+    shell: '''
+    pochoir --store {store} grad -s {input} -G {output.arr}; \
+    pochoir --store {store} plot-mag -a {output.arr} -o {output.plt}
+    '''
+
 rule plots_linear:
     input:
-        f'{store}/{{engine}}/{{taxon}}/{{field}}.npz'
+        f'{store}/{{taxon}}/{{field}}.npz'
     output:
-        f'{plots}/{{engine}}/{{taxon}}/{{field}}-linear.png'
+        f'{plots}/{{taxon}}/{{field}}-linear.png'
     shell: '''
     pochoir --store {store} plot-image -s linear -a {input} -o {output}
     '''
 
 rule plots_signedlog:
     input:
-        f'{store}/{{engine}}/{{taxon}}/{{field}}.npz'
+        f'{store}/{{taxon}}/{{field}}.npz'
     output:
-        f'{plots}/{{engine}}/{{taxon}}/{{field}}-signedlog.png'
+        f'{plots}/{{taxon}}/{{field}}-signedlog.png'
     shell: '''
     pochoir --store {store} plot-image -s signedlog -a {input} -o {output}
     '''
 
 rule velo:
     input:
-        f'{store}/{{engine}}/potential/{{field}}.npz'
+        f'{store}/potential/{{field}}.npz'
     output:
-        f'{store}/{{engine}}/velocity/{{field}}.npz'
+        f'{store}/velocity/{{field}}.npz'
     params:
         temperature = '89*K'
     shell: """
@@ -125,19 +127,23 @@ rule velo:
 
 rule plot_velo:
     input:
-        f'{store}/{{engine}}/velocity/{{field}}.npz'            
+        f'{store}/velocity/{{field}}.npz'            
     output:
-        quiver = f'{plots}/{{engine}}/velocity/{{field}}-quiver.png'
+        quiver = f'{plots}/velocity/{{field}}-quiver.png',
+        mag = f'{plots}/velocity/{{field}}-mag.png'
     shell: '''
-    pochoir plot-quiver --ylim '15,22' -a {input} -o {output.quiver}
+    pochoir --store {store} plot-quiver --ylim '15,22' \
+        -a {input} -o {output.quiver}; \
+    pochoir --store {store} plot-mag \
+        -a {input} -o {output.mag} -u "mm/us"
     '''
 
 rule drift:
     input:
-        f'{store}/{{engine}}/velocity/{{field}}.npz'
+        f'{store}/velocity/{{field}}.npz'
     output:
-        starts = f'{store}/{{engine}}/starts/{{field}}.npz',
-        paths = f'{store}/{{engine}}/paths/{{field}}.npz'
+        starts = f'{store}/starts/{{field}}.npz',
+        paths = f'{store}/paths/{{field}}.npz'
     params:
         starts = '199.9*mm,0*mm',
         steps = '0*us,200*us,0.1*us'
@@ -149,31 +155,22 @@ rule drift:
     
 
 
-def all_rule(engines=None):
-    if engines is None:
-        engines=["numpy"]
-    drift_engines = list()
-    for maybe in ["numpy", "torch"]:
-        if maybe in engines:
-            drift_engines.append(maybe)
-
+def all_rule():
     return (rules.configs.output,
-            expand(rules.gen.output, domain=["drift"],
-                   field=DFIELDS, engine=engines),
-            expand(rules.gen.output, domain=["weight"],
-                   field=WFIELDS, engine=engines),
-            expand(rules.fdm.output, field=FIELDS, engine=engines),
+            expand(rules.gen.output,
+                   domain=["drift"], field=DFIELDS),
+            expand(rules.gen.output,
+                   domain=["weight"], field=WFIELDS),
+            expand(rules.fdm.output, field=FIELDS),
             expand(rules.plots_linear.output,
-                   field=FIELDS, engine=engines, taxon=TAXONS),
+                   field=FIELDS, taxon=TAXONS),
             expand(rules.plots_signedlog.output,
-                   field=FIELDS, engine=engines, taxon=VALUE_TAXONS),
-            expand(rules.velo.output, field=["drift"], engine=["numpy"]),
-            expand(rules.plot_velo.output, field=["drift"], engine=["numpy"]),
-            expand(rules.drift.output, field=["drift"], engine=drift_engines),
+                   field=FIELDS, taxon=VALUE_TAXONS),
+            expand(rules.velo.output, field=["drift"]),
+            expand(rules.plot_velo.output, field=["drift"]),
+            expand(rules.drift.output, field=["drift"]),
             )
 
-rule all_numpy:
-    input: all_rule(["numpy"])
 
 rule all:
     input: all_rule()

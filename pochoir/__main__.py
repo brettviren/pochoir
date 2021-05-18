@@ -395,6 +395,10 @@ def drift(ctx, paths, starts, velocity, engine, steps):
     '''
     Calculate drift paths.
     '''
+    start_points = ctx.obj.get(starts)
+    if start_points is None:
+        click.echo(f'no starts: {starts}')
+        return -1
 
     steps = ','.join(steps)
     start, stop, step = pochoir.arrays.fromstr1(steps)
@@ -409,7 +413,7 @@ def drift(ctx, paths, starts, velocity, engine, steps):
     dom = ctx.obj.get_domain(domain)
     velo = [v/s for v,s in zip(velo, dom.spacing)]
 
-    start_points = ctx.obj.get(starts)
+
 
     # shape: (nstarts, nticks, ndims)
     thepaths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
@@ -591,6 +595,30 @@ def plot_image(ctx, array, output, scale):
     if domain:
         dom = ctx.obj.get_domain(domain)
     pochoir.plots.image(arr, output, dom, array, scale=scale)
+
+
+@cli.command("plot-mag")
+@click.option("-a", "--array", type=str, required=True,
+              help="Input array to plot")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
+@click.option("-u", "--units", type=str, default=None,
+              help="The units in which to display magnitude")
+@click.pass_context
+def plot_mag(ctx, array, output, units):
+    '''
+    Plot magnitude of a vector field
+    '''
+    arr, md = ctx.obj.get(array, True)
+    domain = md.get("domain")
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+    mag = pochoir.arrays.vmag(arr)
+    if units is not None:
+        u = pochoir.arrays.fromstr1(units)
+        mag = mag/u
+    pochoir.plots.image(mag, output, dom, array)
 
 
 @cli.command("plot-quiver")
