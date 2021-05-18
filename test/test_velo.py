@@ -3,6 +3,7 @@
 import numpy
 import pochoir
 from pochoir import units
+from pochoir.fdm_numpy import solve
 
 def test_velo():
 
@@ -26,8 +27,8 @@ def test_velo():
     precision = 0.001
     epoch = 100
     nepochs = 100
-    pot, pot_err = pochoir.fdm.solve(iva, bva, edge_cond,
-                                     precision, epoch, nepochs)
+    pot, pot_err = solve(iva, bva, edge_cond,
+                         precision, epoch, nepochs)
     
     efield = pochoir.arrays.gradient(pot, dom.spacing)
     emag = pochoir.arrays.vmag(efield)

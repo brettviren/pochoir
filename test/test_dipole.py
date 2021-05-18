@@ -2,6 +2,8 @@
 import numpy
 import pochoir
 
+from pochoir.fdm_numpy import solve
+
 
 def test_dipole():
     dom = pochoir.domain.Domain((100,100), 0.1)
@@ -14,8 +16,8 @@ def test_dipole():
     precision = 0.001
     epoch = 100
     nepochs = 100
-    pot, pot_err = pochoir.fdm.solve(iva, bva, edge_cond,
-                                     precision, epoch, nepochs)
+    pot, pot_err = solve(iva, bva, edge_cond,
+                         precision, epoch, nepochs)
     
 
     efield = pochoir.arrays.gradient(pot, dom.spacing)

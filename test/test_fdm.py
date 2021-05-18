@@ -1,11 +1,13 @@
 import numpy
-from pochoir import fdm, arrays
+from pochoir import arrays
+from pochoir.fdm_numpy import solve
+from pochoir.fdm_generic import edge_condition
 
 def test_edge():
     a = numpy.array(range(12)).reshape((3,4))
     a = arrays.pad1(a)
     print(f'{a.shape}\n{a}')
-    fdm.edge_condition(a, False, True)
+    edge_condition(a, False, True)
     print(f'{a.shape}\n{a}')
     assert(a[0] == a[1]).all()
     assert(a[-1] == a[-1]).all()
@@ -22,7 +24,7 @@ def test_fdm():
     b = numpy.ones((30,40))    
     b[a==0] = 0.0
 
-    c,e = fdm.solve(a, b, (False,True), 1e-6, 100, 20)
+    c,e = solve(a, b, (False,True), 1e-6, 100, 20)
 
     assert c.shape == a.shape
 
