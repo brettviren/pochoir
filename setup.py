@@ -5,6 +5,31 @@ with open("pochoir/version.py") as fp:
     exec(fp.read(), ver_globals)
 version = ver_globals["version"]
 
+extras = {
+    "hdf5":[
+        "h5py",          # support HDF5 files or
+    ],
+    "plots":[
+        "matplotlib",
+    ],
+    "torch":[
+        "torch",         # for CPU/GPU
+        "torchdiffeq",   # torch rk
+    ],
+    "cupy":[
+        "cupy",
+    ],
+    "numba":[
+        "numba",
+    ],
+    "vtk":[
+        "pyevtk",        # for optional export to VTK
+        "pytest",
+    ],
+}
+extras['full'] = [x for v in extras.values() for x in v]
+
+
 setuptools.setup(
     name="pochoir",
     version=version,
@@ -18,20 +43,7 @@ setuptools.setup(
         "click",         # CLI
         "numpy",         # .npz, need numpy in general
     ],
-    extras_require={
-        "hdf5":"h5py",          # support HDF5 files or
-        "plots":"matplotlib",
-        "torch":[
-            "torch",         # for CPU/GPU
-            "torchdiffeq",   # torch rk
-        ],
-        "cupy":"cupy",
-        "numba":"numba",
-        "vtk":[
-            "pyevtk",        # for optional export to VTK
-            "pytest",
-        ]
-    },
+    extras_require=extras,
     entry_points = dict(
         console_scripts = [
             'pochoir = pochoir.__main__:main',
