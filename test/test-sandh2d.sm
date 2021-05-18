@@ -89,16 +89,72 @@ rule plots_signedlog:
     pochoir --store {store} plot-image -s signedlog -a {input} -o {output}
     '''
 
-rule all:
+rule velo:
     input:
-        rules.configs.output,
-        expand(rules.gen.output, domain=["drift"],
-               field=DFIELDS, engine=ENGINES),
-        expand(rules.gen.output, domain=["weight"],
-               field=WFIELDS, engine=ENGINES),
-        expand(rules.fdm.output, field=FIELDS, engine=ENGINES),
-        expand(rules.plots_linear.output,
-               field=FIELDS, engine=ENGINES, taxon=TAXONS),
-        expand(rules.plots_signedlog.output,
-               field=FIELDS, engine=ENGINES, taxon=VALUE_TAXONS)
+        f'{store}/{{engine}}/potential/{{field}}.npz'
+    output:
+        f'{store}/{{engine}}/velocity/{{field}}.npz'
+    params:
+        temperature = '89*K'
+    shell: """
+    pochoir --store {store}  velo \
+    --temperature {params.temperature} \
+     --potential {input} \
+     --velocity {output}
+    """
+
+rule plot_velo:
+    input:
+        f'{store}/{{engine}}/velocity/{{field}}.npz'            
+    output:
+        quiver = f'{plots}/{{engine}}/velocity/{{field}}-quiver.png'
+    shell: '''
+    pochoir plot-quiver --ylim '15,22' -a {input} -o {output.quiver}
+    '''
+
+rule drift:
+    input:
+        f'{store}/{{engine}}/velocity/{{field}}.npz'
+    output:
+        starts = f'{store}/{{engine}}/starts/{{field}}.npz',
+        paths = f'{store}/{{engine}}/paths/{{field}}.npz'
+    params:
+        starts = '199.9*mm,0*mm',
+        steps = '0*us,200*us,0.1*us'
+    shell: '''
+    pochoir --store {store} starts --starts {output.starts} {params.starts} ;
+    pochoir --store {store} drift --starts {output.starts} \
+    --velocity {input} --paths {output.paths} {params.steps}
+    '''
+    
+
+
+def all_rule(engines=None):
+    if engines is None:
+        engines=["numpy"]
+    drift_engines = list()
+    for maybe in ["numpy", "torch"]:
+        if maybe in engines:
+            drift_engines.append(maybe)
+
+    return (rules.configs.output,
+            expand(rules.gen.output, domain=["drift"],
+                   field=DFIELDS, engine=engines),
+            expand(rules.gen.output, domain=["weight"],
+                   field=WFIELDS, engine=engines),
+            expand(rules.fdm.output, field=FIELDS, engine=engines),
+            expand(rules.plots_linear.output,
+                   field=FIELDS, engine=engines, taxon=TAXONS),
+            expand(rules.plots_signedlog.output,
+                   field=FIELDS, engine=engines, taxon=VALUE_TAXONS),
+            expand(rules.velo.output, field=["drift"], engine=["numpy"]),
+            expand(rules.plot_velo.output, field=["drift"], engine=["numpy"]),
+            expand(rules.drift.output, field=["drift"], engine=drift_engines),
+            )
+
+rule all_numpy:
+    input: all_rule(["numpy"])
+
+rule all:
+    input: all_rule()
 

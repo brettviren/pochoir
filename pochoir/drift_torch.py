@@ -44,12 +44,15 @@ class Simple:
         '''
         Return velocity vector at location (time independent).
 
-        Location is given as an index (but floating point) vector.
+        Note, torch version requires time as first arg, point as
+        second.  This differs from scipy version.
         '''
+        print(f'drift: point={tpoint} tick={tick}')
         velo = torch.zeros_like(tpoint)
-        xy = [t.reshape(-1) for t in tpoint]
+        # torchdiffeq wants [ [x], [y], [z] ]
+        point_as_list = [ t.reshape(-1) for t in tpoint ]
         for ind, inter in enumerate(self.interp):
-            got = inter(xy)
+            got = inter(point_as_list)
             velo[ind] = got
         
         #print("interp",tpoint.numpy().tolist(),velo.numpy().tolist())
@@ -61,11 +64,12 @@ def solve(domain, start, velocity, times):
     '''
     Return the path of points at times from start through velocity field.
     '''
-    start = to_torch(start)
-    velocity = [to_torch(v) for v in velocity]
-    times = to_torch(times)
+    device = 'cpu'
+    start = torch.tensor(start, dtype=torch.float32, device=device)
+    velocity = [torch.tensor(v, dtype=torch.float32, device=device) for v in velocity]
+    times = torch.tensor(times, dtype=torch.float32, device=device)
     func = Simple(domain, velocity)
     print(f"starting path at {start}")
     res = odeint(func, start, times, rtol=0.01, atol=0.01)
     print(f"function called {func.calls} times")
-    return res
+    return res.cpu().numpy()

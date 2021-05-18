@@ -403,7 +403,7 @@ def drift(ctx, paths, starts, velocity, engine, steps):
     ticks = pochoir.arrays.linspace(start, stop, nsteps,
                                     endpoint=False)
 
-    drifter = getattr(pochoir.drift, engine)
+    drifter = getattr(pochoir.drift, f'solve_{engine}')
     velo, md = ctx.obj.get(velocity, True)
     domain = md['domain']
     dom = ctx.obj.get_domain(domain)
@@ -415,10 +415,7 @@ def drift(ctx, paths, starts, velocity, engine, steps):
     thepaths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
     for ind, point in enumerate(start_points):
         path = drifter(dom, point, velo, ticks)
-        if engine=="torch":
-            thepaths[ind] = path.cpu().numpy()
-        else:
-            thepaths[ind]=path
+        thepaths[ind]=path
 
     params=dict(taxon="paths", command="drift", domain=domain,
                 tstart=start, tstop=stop, nsteps=nsteps)
@@ -602,8 +599,14 @@ def plot_image(ctx, array, output, scale):
 @click.option("-o", "--output",
               type=click.Path(exists=False, dir_okay=False),
               help="Output graphics file")
+@click.option("--step", default=1,
+              help="Step over which to sample the array")
+@click.option("--xlim", default=None, type=str,
+              help="Limit X plot range")
+@click.option("--ylim", default=None, type=str,
+              help="Limit Y plot range")
 @click.pass_context
-def plot_quiver(ctx, array, output):
+def plot_quiver(ctx, array, output, step, xlim, ylim):
     '''
     Visualize a 2D or 3D vector field as a "quiver" plot.
     '''
@@ -611,22 +614,40 @@ def plot_quiver(ctx, array, output):
     domain = md.get("domain")
     if domain:
         dom = ctx.obj.get_domain(domain)
-    pochoir.plots.quiver(arr, output, domain=dom)
+    if xlim:
+        xlim = pochoir.arrays.fromstr1(xlim)
+    if ylim:
+        ylim = pochoir.arrays.fromstr1(ylim)
+
+    pochoir.plots.quiver(arr, output, domain=dom, step=step,
+                         limits=(xlim, ylim))
 
 
 @cli.command("plot-drift")
-@click.option("-d", "--domain", type=str, default=None,
-              help="Use named dataset for the domain, (def: indices)")
 @click.option("-t", "--trajectory", type=int, default=-1,
-              help="Numer of trajectories to plot (def: plot only traj 0)")
-@click.argument("dataset")
-@click.argument("plotfile")
+              help="Number of trajectories to plot (def: plot only traj 0)")
+@click.option("-p", "--paths", type=str,
+              help="The paths array to plot")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
 @click.pass_context
-def plot_drift(ctx, domain, trajectory, dataset, plotfile):
-
-    arr = ctx.obj.get(dataset)
-    dom = ctx.obj.get_domain(domain)
-    pochoir.plots.drift(arr, plotfile, dom , trajectory)
+def plot_drift(ctx, trajectory, paths, output):
+    '''
+    Visualize 2D or 3D paths
+    '''
+    arr, md = ctx.obj.get(paths, True)
+    domain = md.get("domain")
+    dom = None
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+    if arr.shape[-1] == 2:
+        pochoir.plots.drift2d(arr, output, dom, trajectory)
+        return
+    if arr.shape[-1] == 3:
+        pochoir.plots.drift3d(arr, output, dom, trajectory)
+    click.echo(f'unsupported array of shape {arr.shape}')
+    return -1
 
 
 @cli.command("export-vtk-image")

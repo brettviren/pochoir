@@ -8,6 +8,8 @@ import numpy
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+# fixme: instead of passing in a file name just so this can be called,
+# the caller in __main__.py should handle saving.
 def savefig(fname):
     path = Path(fname)
     if not path.parent.exists():
@@ -56,7 +58,22 @@ def image(arr, fname, domain, title="", scale="linear"):
     plt.colorbar()
     savefig(fname)
 
-def quiver(varr, fname, domain):
+def set_limits(limits):
+    if not limits:
+        return
+    xlim, ylim = limits
+    if xlim is not None:
+        plt.xlim(*xlim)
+    if ylim is not None:
+        plt.ylim(*ylim)
+
+
+def quiver(varr, fname, domain, step=1, limits=None):
+    '''
+    Plot a vector field.
+
+    step determines the amount of decimation.
+    '''
     varr = [arrays.to_numpy(a) for a in varr]
     ndim = len(varr)
     if ndim not in (2,3):
@@ -64,20 +81,38 @@ def quiver(varr, fname, domain):
 
     mg = domain.meshgrid
 
+    # possibly decimate
+    slcs = tuple([slice(0,s,step) for s in varr[0].shape])
+
     plt.clf()
     if ndim == 2:               # 2D
-        plt.quiver(mg[0], mg[1],
-                   varr[0], varr[1], units='xy')
+        plt.quiver(mg[1][slcs], mg[0][slcs],
+                   varr[1][slcs], varr[0][slcs], units='xy')
+        set_limits(limits)
+            
     else:                       # 3D
         fig = plt.figure()
         ax = fig.gca(projection='3d')
 
-        ax.quiver(mg[0], mg[1], mg[2],
-                  varr[0], varr[1], varr[2],
+        ax.quiver(mg[0][slcs], mg[1][slcs], mg[2][slcs],
+                  varr[0][slcs], varr[1][slcs], varr[2][slcs],
                   length=domain.spacing[0], normalize=True)
+        set_limits(limits)
+
     savefig(fname)
 
-def drift(varr, fname, domain, trajectory):
+def drift2d(paths, output, domain, trajectory):
+    '''
+    Plot 2D drift paths
+    '''
+    for path in paths:
+        plt.scatter(path[:,0], path[:,1])
+    savefig(output)
+
+def drift3d(varr, fname, domain, trajectory):
+    '''
+    Plot 3D drift paths
+    '''
     varr = [arrays.to_numpy(a) for a in varr]
     ndim = len(varr)
     mg = domain.meshgrid

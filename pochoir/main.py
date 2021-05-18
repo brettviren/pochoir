@@ -46,6 +46,8 @@ class Main:
         return str(self.instore_path)
 
     def key(self, fname):
+        if fname is None:
+            raise KeyError("null key not valid")
         p = Path(fname).resolve()
         try:
             got = p.relative_to(self.instore_path)
