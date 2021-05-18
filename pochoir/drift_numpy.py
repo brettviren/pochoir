@@ -27,7 +27,7 @@ class Simple:
             start = origin[dim]
             stop  = origin[dim] + shape[dim] * spacing[dim]
             rang = numpy.arange(start, stop, spacing[dim])
-            #print ("interp dim:",dim,rang.shape,vfield[dim].shape)
+            print ("interp dim:", dim, rang.shape, vfield[dim].shape)
             points.append(rang)
 
         self.interp = [

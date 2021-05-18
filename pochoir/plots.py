@@ -79,7 +79,9 @@ def quiver(varr, fname, domain, step=1, limits=None):
     if ndim not in (2,3):
         raise ValueError("quiver plots take vector of 2D or 3D arrays")
 
-    mg = domain.meshgrid
+
+    mg = numpy.meshgrid(*domain.linspaces, indexing="ij")
+    print (f'meshgrid: {mg[0].shape} -> {mg[1].shape}')
 
     # possibly decimate
     slcs = tuple([slice(0,s,step) for s in varr[0].shape])

@@ -49,6 +49,29 @@ rule gen:
     {store}/{wildcards.field}.json 
     '''
 
+fdm_params = {
+    "drift": dict(
+        nepochs = 100,
+        epoch = 100,
+        prec = 0.01,
+        edges = "fixed,periodic"
+    ),
+    "weight-col": dict(
+        nepochs = 100,
+        epoch = 100,
+        prec = 0.01,
+        edges = "fixed,periodic"
+    ),
+    "weight-ind": dict(
+        nepochs = 100,
+        epoch = 100,
+        prec = 0.01,
+        edges = "fixed,periodic"
+    ),
+}
+    
+
+
 rule fdm:
     input:
         iva = f'{store}/{{engine}}/initial/{{field}}.npz',
@@ -57,16 +80,13 @@ rule fdm:
         pot = f'{store}/{{engine}}/potential/{{field}}.npz',
         inc = f'{store}/{{engine}}/increment/{{field}}.npz'
     params:
-        nepochs = 100,
-        epoch = 100,
-        prec = 0.01,
-        edges = "fixed,periodic"
+        p = lambda w: fdm_params[w.field]
 
     shell: '''
     pochoir --store {store} \
     fdm --engine {wildcards.engine} \
-    --nepochs {params.nepochs} --epoch {params.epoch} \
-    --precision {params.prec} --edges {params.edges} \
+    --nepochs {params.p[nepochs]} --epoch {params.p[epoch]} \
+    --precision {params.p[prec]} --edges {params.p[edges]} \
     --initial {input.iva} --boundary {input.bva} \
     --potential {output.pot} --increment {output.inc}
     '''
