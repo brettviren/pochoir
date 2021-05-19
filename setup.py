@@ -16,11 +16,15 @@ extras = {
         "torch",         # for CPU/GPU
         "torchdiffeq",   # torch rk
     ],
-    "cupy":[
+    "cupy":[                    # fastest GPU for FDM
         "cupy",
     ],
-    "numba":[
+    "numba":[                   # JIT for CPU/GPU
         "numba",
+    ],
+    "gencfg": [                 # for gencfg command
+        "jsonnet",
+        "anyconfig"
     ],
     "vtk":[
         "pyevtk",        # for optional export to VTK

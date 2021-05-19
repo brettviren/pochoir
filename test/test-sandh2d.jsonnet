@@ -106,9 +106,9 @@ local starts = [
 ];
 
 {
-    "drift.json": drift,
-    "weight-ind.json": weight0,
-    "weight-col.json": weight1,
+    "gencfg/drift.json": drift,
+    "gencfg/weight-ind.json": weight0,
+    "gencfg/weight-col.json": weight1,
     "domains/drift.json": domain(drift_width, full_height),
     "domains/weight.json": domain(weight_width, full_height),
     "starts.json": starts,

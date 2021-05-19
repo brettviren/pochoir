@@ -35,44 +35,52 @@ rule configs:
     input:
         "test/test-sandh2d.jsonnet"
     output:
-        f'{store}/domains/drift.json',
-        f'{store}/domains/weight.json'
+        drift_domain = f'{store}/domains/drift.json',
+        weight_domain = f'{store}/domains/weight.json',
+        drift_cfg = f'{store}/gencfg/drift.json',
+        wcol_cfg = f'{store}/gencfg/weight-col.json',
+        wind_cfg = f'{store}/gencfg/weight-ind.json'
     shell: '''
-    mkdir -p {store}/domains ;
-    jsonnet -m {store} {input}
+    pochoir gencfg -m {store} {input}
     '''
+def domain_json(w):
+    pat = '{store}/domains/{domain}.json'
+    return pat.format(store=store, **FIELDS[w.field])
+
+def field_json(w):
+    pat = '{store}/gencfg/{field}.json'
+    return pat.format(store=store, field=w.field)
+def field_data(w):
+    fname = field_json(w)
+    return json.loads(open(fname).read())['fdm']
+
 
 rule gen:
     input:
-        lambda w: '{store}/domains/{domain}.json'.format(store=store, **FIELDS[w.field])
+        domain = domain_json,
+        field = field_json
     output:
         iva = f'{store}/initial/{{field}}.npz',
         bva = f'{store}/boundary/{{field}}.npz'
     shell: '''
     pochoir --store {store} \
-    gen --generator sandh2d --domain {input} \
+    gen --generator sandh2d --domain {input.domain} \
     --initial {output.iva} \
     --boundary {output.bva} \
-    {store}/{wildcards.field}.json 
+    {input.field}
     '''
-
-
-
-def fdm_cfg(w):
-    fname = '{store}/{field}.json'.format(store=store, field=w.field)
-    return json.loads(open(fname).read())['fdm']
 
 rule fdm:
     input:
-        cfg = lambda w: '{store}/domains/{domain}.json'.format(store=store, **FIELDS[w.field]),
+        cfg = domain_json,
         iva = f'{store}/initial/{{field}}.npz',
         bva = f'{store}/boundary/{{field}}.npz'
     output:
         pot = f'{store}/potential/{{field}}.npz',
         inc = f'{store}/increment/{{field}}.npz'
     params:
-        p = fdm_cfg,
-        engine = "cupy"
+        p = field_data,
+        engine = "numpy"
     shell: '''
     pochoir --store {store} \
     fdm --engine {params.engine} \

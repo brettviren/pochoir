@@ -86,6 +86,27 @@ def version():
 
 
 @cli.command()
+@click.option("-m", "--multi", default=None,
+              type=click.Path(file_okay=False, dir_okay=True),
+              help="Specify a directory to receive multi-file output")
+@click.option("-o", "--output", default="/dev/stdout",
+              type=click.Path(file_okay=True, dir_okay=False),
+              help="Specify output file, default to stdout")
+@click.argument("filename")
+@click.pass_context
+def gencfg(ctx, multi, output, filename):
+    '''
+    Generate JSON configuration files from master file.
+    '''
+    import json
+    import pochoir.gencfg as gc
+    if multi:
+        gc.multi(filename, multi)
+        return
+    data = gc.loadf(filename)
+    open(output,'wb').write(json.dumps(data).encode())
+
+@cli.command()
 @click.option("-s","--shape", type=str, required=True,
               help="The number of grid points in each dimension")
 @click.option("-o","--origin", default=None, type=str,
