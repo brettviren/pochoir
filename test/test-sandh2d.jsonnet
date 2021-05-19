@@ -100,10 +100,10 @@ local weight1 = {
     fdm: weight_fdm    
 };
 
-local gen1(plns) = {
-
-    planes: plns
-};
+local imp = 0.9*pitch/5.0;
+local starts = [
+    [caty, -0.5*pitch + 0.1 + 0.1*imp*pitch] for imp in std.range(0,5)
+];
 
 {
     "drift.json": drift,
@@ -111,4 +111,5 @@ local gen1(plns) = {
     "weight-col.json": weight1,
     "domains/drift.json": domain(drift_width, full_height),
     "domains/weight.json": domain(weight_width, full_height),
+    "starts.json": starts,
 }

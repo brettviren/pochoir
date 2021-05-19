@@ -138,21 +138,45 @@ rule plot_velo:
         -a {input} -o {output.mag} -u "mm/us"
     '''
 
+def starts_cfg(w):
+    fname = '{store}/starts.json'.format(store=store, field=w.field)
+    starts = json.loads(open(fname).read())
+    return ' '.join([','.join(map(str,s)) for s in starts])
+
+rule starts:
+    input:
+        f'{store}/starts.json'
+    output:
+        f'{store}/starts/{{field}}.npz'
+    params:
+        starts = starts_cfg
+    shell: '''
+    pochoir --store {store} starts --starts {output} {params.starts}
+    '''
+
 rule drift:
     input:
-        f'{store}/velocity/{{field}}.npz'
+        arr = f'{store}/velocity/{{field}}.npz',
+        starts = f'{store}/starts/{{field}}.npz'
     output:
-        starts = f'{store}/starts/{{field}}.npz',
         paths = f'{store}/paths/{{field}}.npz'
     params:
-        starts = '199.9*mm,0*mm',
         steps = '0*us,200*us,0.1*us'
     shell: '''
-    pochoir --store {store} starts --starts {output.starts} {params.starts} ;
-    pochoir --store {store} drift --starts {output.starts} \
-    --velocity {input} --paths {output.paths} {params.steps}
+    pochoir --store {store} drift --engine numpy --starts {input.starts} \
+    --velocity {input.arr} --paths {output.paths} {params.steps}
     '''
     
+rule plot_drift:
+    input:
+        f'{store}/paths/{{field}}.npz'
+    output:
+        f'{plots}/paths/{{field}}.png'
+    shell: '''
+    pochoir --store {store} plot-drift -p {input} -o {output}
+    '''
+
+
 
 
 def all_rule():
@@ -169,6 +193,7 @@ def all_rule():
             expand(rules.velo.output, field=["drift"]),
             expand(rules.plot_velo.output, field=["drift"]),
             expand(rules.drift.output, field=["drift"]),
+            expand(rules.plot_drift.output, field=["drift"]),
             )
 
 

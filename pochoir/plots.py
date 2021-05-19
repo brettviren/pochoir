@@ -112,7 +112,7 @@ def drift2d(paths, output, domain, trajectory):
     Plot 2D drift paths
     '''
     for path in paths:
-        plt.scatter(path[:,0], path[:,1])
+        plt.scatter(path[:,1], path[:,0])
     savefig(output)
 
 def drift3d(varr, fname, domain, trajectory):
