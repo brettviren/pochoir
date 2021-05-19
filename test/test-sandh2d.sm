@@ -36,10 +36,12 @@ rule configs:
         "test/test-sandh2d.jsonnet"
     output:
         f'{store}/domains/drift.json',
-        f'{store}/domains/weight.json'
+        f'{store}/domains/weight.json',
+        f'{store}/gencfg/drift.json',
+        f'{store}/gencfg/weight-col.json',
+        f'{store}/gencfg/weight-ind.json'
     shell: '''
-    mkdir -p {store}/domains ;
-    jsonnet -m {store} {input}
+    pochoir gencfg -m {store} {input}
     '''
 
 rule gen:
