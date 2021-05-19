@@ -13,7 +13,11 @@ local sep = 3.2*mm;
 
 local indy = 20*mm;
 local coly = indy-sep;
-local caty = 20*cm - gridspacing;
+// Put the "cathode" one grid below the domain 
+local topy = 20*cm;
+local caty = topy - gridspacing;
+// And start paths one grid below the "cathode"
+local paty = caty - gridspacing;
 //local gndy = 0*cm;
 local gndy = gridspacing;
 
@@ -100,9 +104,9 @@ local weight1 = {
     fdm: weight_fdm    
 };
 
-local imp = 0.9*pitch/5.0;
+local imp = pitch/5.0;
 local starts = [
-    [caty, -0.5*pitch + 0.1 + 0.1*imp*pitch] for imp in std.range(0,5)
+    [paty, -0.5*pitch + imp] for imp in std.range(0,5)
 ];
 
 {
@@ -111,5 +115,5 @@ local starts = [
     "gencfg/weight-col.json": weight1,
     "domains/drift.json": domain(drift_width, full_height),
     "domains/weight.json": domain(weight_width, full_height),
-    "starts.json": starts,
+    "gencfg/starts.json": starts,
 }

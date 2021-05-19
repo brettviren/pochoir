@@ -31,34 +31,46 @@ DFIELDS = [n for n,d in FIELDS.items() if d['domain'] == 'drift']
 TAXONS = ['initial', 'boundary', 'potential', 'increment']
 VALUE_TAXONS = ['initial', 'potential', 'increment']
 
+
+# drift_domain = f'{store}/domains/drift.json',
+# weight_domain = f'{store}/domains/weight.json',
+# drift_cfg = f'{store}/gencfg/drift.json',
+# wcol_cfg = f'{store}/gencfg/weight-col.json',
+# wind_cfg = f'{store}/gencfg/weight-ind.json',
+# starts_cfg = f'{store}/gencfg/starts.json'
+
 rule configs:
     input:
         "test/test-sandh2d.jsonnet"
     output:
-        drift_domain = f'{store}/domains/drift.json',
-        weight_domain = f'{store}/domains/weight.json',
-        drift_cfg = f'{store}/gencfg/drift.json',
-        wcol_cfg = f'{store}/gencfg/weight-col.json',
-        wind_cfg = f'{store}/gencfg/weight-ind.json'
+        f'{store}/gencfg.lst',
     shell: '''
-    pochoir gencfg -m {store} {input}
+    pochoir gencfg -o {output} -m {store} {input}
     '''
-def domain_json(w):
+
+
+def domain_file(w):
     pat = '{store}/domains/{domain}.json'
     return pat.format(store=store, **FIELDS[w.field])
-
-def field_json(w):
+def field_file(w):
     pat = '{store}/gencfg/{field}.json'
     return pat.format(store=store, field=w.field)
 def field_data(w):
-    fname = field_json(w)
+    fname = field_file(w)
     return json.loads(open(fname).read())['fdm']
+def starts_file(w):
+    pat = '{store}/gencfg/starts.json'
+    return pat.format(store=store, field=w.field)
+def starts_data(w):
+    fname = starts_file(w)
+    starts = json.loads(open(fname).read())
+    return ' '.join([','.join(map(str,s)) for s in starts])
 
 
 rule gen:
     input:
-        domain = domain_json,
-        field = field_json
+        domain = domain_file,
+        field = field_file
     output:
         iva = f'{store}/initial/{{field}}.npz',
         bva = f'{store}/boundary/{{field}}.npz'
@@ -72,7 +84,7 @@ rule gen:
 
 rule fdm:
     input:
-        cfg = domain_json,
+        cfg = domain_file,
         iva = f'{store}/initial/{{field}}.npz',
         bva = f'{store}/boundary/{{field}}.npz'
     output:
@@ -146,18 +158,14 @@ rule plot_velo:
         -a {input} -o {output.mag} -u "mm/us"
     '''
 
-def starts_cfg(w):
-    fname = '{store}/starts.json'.format(store=store, field=w.field)
-    starts = json.loads(open(fname).read())
-    return ' '.join([','.join(map(str,s)) for s in starts])
 
 rule starts:
     input:
-        f'{store}/starts.json'
+        starts_file
     output:
         f'{store}/starts/{{field}}.npz'
     params:
-        starts = starts_cfg
+        starts = starts_data
     shell: '''
     pochoir --store {store} starts --starts {output} {params.starts}
     '''

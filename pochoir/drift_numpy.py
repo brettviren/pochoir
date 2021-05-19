@@ -21,7 +21,7 @@ class Simple:
         spacing = domain.spacing
         origin = domain.origin
         points = list()
-        self.domain = domain
+        self.bb = domain.bb
 
         self.calls = 0
 
@@ -33,32 +33,46 @@ class Simple:
             points.append(rang)
 
         self.interp = [
-            RGI(points, component)
+            RGI(points, component, fill_value=0.0)
             for component in vfield]
+
+    def inside(self, point):
+        for i,p in enumerate(point):
+            if p < self.bb[0][i] or p > self.bb[1][i]:
+                return False
+        return True
+
+    def interpolate(self, pos):
+        velo = numpy.zeros_like(pos)        
+        for ind, inter in enumerate(self.interp):
+            try:
+                got = inter([pos])
+            except ValueError as err:
+                print(f'Interpolation failed at:\n\tv_{ind}(r=@{pos/units.mm} mm)')
+                print(f'\tdomain: {self.bb}')
+                raise
+
+            velo[ind] = got[0]
+        return velo
+
+    def extrapolate(self, pos):
+        return numpy.zeros_like(pos)
 
     def __call__(self, time, pos):
         '''
         Return velocity vector at location (time independent).
         '''
-        print(f'drift:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm')
-        velo = numpy.zeros_like(pos)
-        speed_unit = units.mm/units.us
-        for ind, inter in enumerate(self.interp):
-            try:
-                got = inter([pos])
-            except ValueError as err:
-                print(f'v_{ind}(t={time/units.us:.3f}us, r=@{pos/units.mm} mm)')
-                o = self.domain.origin
-                e = o + self.domain.spacing * self.domain.shape
-                print(f'{o/units.mm} mm -> {e/units.mm} mm')
-
-                raise
-            got = got[0]
-            print(f'\tv_{ind}(t={time/units.us:.3f}us, r=@{pos}) = {got/speed_unit:.3f} mm/us')
-            velo[ind] = got
-
         self.calls += 1
+        speed_unit = units.mm/units.us
+        if self.inside(pos):
+            velo = self.interpolate(pos)
+            print(f'interp:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm v={velo/speed_unit} {self.bb}')
+        else:
+            velo = self.extrapolate(pos)
+            print(f'extrap:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm v={velo/speed_unit} {self.bb}')
+
         return velo
+
 
 
 def solve(domain, start, velocity, times):

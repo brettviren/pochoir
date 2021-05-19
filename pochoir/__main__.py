@@ -101,7 +101,7 @@ def gencfg(ctx, multi, output, filename):
     import json
     import pochoir.gencfg as gc
     if multi:
-        gc.multi(filename, multi)
+        gc.multi(filename, multi, output)
         return
     data = gc.loadf(filename)
     open(output,'wb').write(json.dumps(data).encode())
