@@ -192,7 +192,19 @@ rule plot_drift:
     pochoir --store {store} plot-drift -p {input} -o {output}
     '''
 
-
+# fixme: label for "paths" here should really be outer product of many
+# things.
+rule induce:
+    input:
+        paths = f'{store}/paths/drift.npz',
+        weighting= f'{store}/potential/{{field}}.npz'
+    output:
+        f'{store}/current/{{field}}.npz',
+    shell: '''
+    pochoir --store {store} induce \
+    --weighting {input.weighting}  --paths {input.paths} \
+    --output {output}
+    '''
 
 
 def all_rule():
@@ -210,6 +222,8 @@ def all_rule():
             expand(rules.plot_velo.output, field=["drift"]),
             expand(rules.drift.output, field=["drift"]),
             expand(rules.plot_drift.output, field=["drift"]),
+            expand(rules.induce.output,
+                   field=['weight-ind', 'weight-col']),
             )
 
 

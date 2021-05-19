@@ -540,7 +540,11 @@ def induce(ctx, charge, weighting, paths, output):
     paths and in the presence of a scalar weighting potential.
     '''
     wpot, wmd = ctx.obj.get(weighting, True)
-    domain = wmd['domain']
+    try:
+        domain = wmd['domain']
+    except KeyError:
+        click.echo(f'no domain for {weighting}.  metadata:\n{wmd}')
+        return -1
     dom = ctx.obj.get_domain(domain)
 
     the_paths, pmd = ctx.obj.get(paths, True)
