@@ -1,4 +1,5 @@
 #+title: Overview of Pochoir Components
+#+setupfile: docs/setup-rto.org
 
 * Component Type Graph
 

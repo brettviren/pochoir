@@ -407,12 +407,14 @@ def starts(ctx, starts, points):
               help="Input starting points")
 @click.option("--velocity", type=str,
               help="Intput velocity array")
+@click.option("--verbose/--no-verbose", default=False,
+              help="Verbose print during calculation")
 @click.option("--engine", type=click.Choice(["numpy", "torch"]),
               default="numpy",
               help="The IVP engine to use")
 @click.argument("steps", nargs=-1)
 @click.pass_context
-def drift(ctx, paths, starts, velocity, engine, steps):
+def drift(ctx, paths, starts, velocity, verbose, engine, steps):
     '''
     Calculate drift paths.
     '''
@@ -439,7 +441,7 @@ def drift(ctx, paths, starts, velocity, engine, steps):
     # shape: (nstarts, nticks, ndims)
     thepaths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
     for ind, point in enumerate(start_points):
-        path = drifter(dom, point, velo, ticks)
+        path = drifter(dom, point, velo, ticks, verbose=verbose)
         thepaths[ind]=path
 
     params=dict(taxon="paths", command="drift", domain=domain,
@@ -610,8 +612,10 @@ def srdot(ctx, weighting, paths, velocity, current):
 @click.option("-s", "--scale", default="linear",
               type=click.Choice(["linear","signedlog"]),
               help="Output graphics file")
+@click.option("-u", "--units", type=str, default=None,
+              help="The units in which to display magnitude")
 @click.pass_context
-def plot_image(ctx, array, output, scale):
+def plot_image(ctx, array, output, scale, units):
     '''
     Visualize a dataset as 2D image
     '''
@@ -619,7 +623,13 @@ def plot_image(ctx, array, output, scale):
     domain = md.get("domain")
     if domain:
         dom = ctx.obj.get_domain(domain)
-    pochoir.plots.image(arr, output, dom, array, scale=scale)
+    if units is not None:
+        u = pochoir.arrays.fromstr1(units)
+        arr = arr/u
+    title = f'{array}'
+    if units:
+        title += f' [{units}]'
+    pochoir.plots.image(arr, output, dom, title, scale=scale)
 
 
 @cli.command("plot-mag")
@@ -643,7 +653,10 @@ def plot_mag(ctx, array, output, units):
     if units is not None:
         u = pochoir.arrays.fromstr1(units)
         mag = mag/u
-    pochoir.plots.image(mag, output, dom, array)
+    title = f'{array}'
+    if units:
+        title += f' [{units}]'
+    pochoir.plots.image(mag, output, dom, title)
 
 
 @cli.command("plot-quiver")

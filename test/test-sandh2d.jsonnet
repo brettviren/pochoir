@@ -104,9 +104,9 @@ local weight1 = {
     fdm: weight_fdm    
 };
 
-local imp = pitch/5.0;
+local imp = pitch/10.0;
 local starts = [
-    [paty, -0.5*pitch + imp] for imp in std.range(0,5)
+    [paty, -0.5*pitch + n*imp] for n in std.range(0,5)
 ];
 
 {
@@ -116,4 +116,7 @@ local starts = [
     "domains/drift.json": domain(drift_width, full_height),
     "domains/weight.json": domain(weight_width, full_height),
     "gencfg/starts.json": starts,
+} + {
+    ["gencfg/starts%d.json"%n]: starts[n] for n in std.range(0,5)
 }
+

@@ -1,53 +1,23 @@
-#+title: Solve field response with FDM
+#+title: Calculate electrical response induced by drifting charge 
 #+EXPORT_FILE_NAME: index.html
+#+setupfile: docs/setup-rto.org
 
-* Overview
+* Introduction
 
-See also
+This package solves Laplace, initial value and other problems in order
+to produce the current response on electrodes due to drifting of
+nearby charge.
 
-- the [[file:overview.org][overview]] for high level parts.
-- the [[file:manual.org][manual]] for details.
-
-The ~pochoir~ package solves for /field responses/ which model the current
-induced in electrodes by electric charge (eg, electrons from
-ionization) drifting through an electrostatic field applied to the
-electrodes.
-
-The overall solution is factored into a number of core sub-problems:
-
-- Specify electrodes and their potentials on a problem domain.
-- Solve Laplace /boundary value problems/ in 2D and 3D using the
-  finite-difference method (FDM) to determine the electrostatic
-  potential fields from the applied and the "weighting" electrode
-  voltages.
-- Solve the /initial value problem/ to determine paths of charge
-  driftiing in the applied potential.
-- Apply the [[https://en.wikipedia.org/wiki/Shockley%E2%80%93Ramo_theorem][Shockley-Ramo theorem]] to combine the above solutions to
-  get currents induced in electrodes.
-
-These sub-problems may be composed by connecting output from one to
-input of another through the ~pochoir~ data store.  ~pochoir~ can also
-convert data in the store to graphics formats (PNG or PDF) for
-visualization and can export to other formats (VTK) for use in other
-visualization tools (~paraview~).  The ~pochoir~ store may use an HDF5
-file.  Following an HDF5 model, ~pochoir~ may also use a collection of
-Numpy NPZ (dataset) and JSON (metadata) files grouped by file system
-directories.
-
-** The name
-
-The core Laplace problems are solved in ~pochoir~ with FDM.  The core
-operation of FDM is sometimes described as a "stencil" convolution.
-The name /pochoir/ describes a stencil-based art style.  No constraint
-is intended on your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
-
+About the name: the core Laplace problems are solved in ~pochoir~ with
+the finite-difference method (FDM).  The core operation of FDM is
+sometimes described as a "stencil" convolution.  The name /pochoir/
+describes a stencil-based art style.  No constraint is intended on
+your personal [[https://www.google.com/search?q=pronounce+pochoir][pronunciation of "pochoir"]].
 
 * Install
 
 ~pochoir~ installs in the "usual Python way".  Use of ~pip~ and a Python
-virtual environment is recommended.  
-
-Eg:
+virtual environment is recommended.   
 
 #+begin_example
 python3 -m venv venv
@@ -61,7 +31,7 @@ echo layout python3 > .envrc
 direnv allow
 #+end_example
 
-Then install either for use:
+To install the base support (no support for GPU, plots, config)
 
 #+begin_example
 pip install git+https://github.com/brettviren/pochoir.git@HEAD
@@ -83,7 +53,8 @@ multiprocessing.
 pip install -e .[torch,cupy,numba,vtk,plots,hdf5]
 #+end_example
 
-Additional setup and of course hardware may be needed to use GPU.
+Additional setup and of course hardware may be needed to use the GPU
+support.
 
 
 * Usage
@@ -113,13 +84,15 @@ Commands:
   export-vtk-image  Export a dataset to a vtk file of same name
   fdm               Apply finite-difference method.
   gen               Generate initial and boundary value arrays from a...
+  gencfg            Generate JSON configuration files from master file.
   grad              Calculate the gradient of a scalar field.
   induce            Calculate induced current.
   init              Initialize a problem with a shape file.
   ls                List the store store
   move-paths        Move paths along offset vector.
-  plot-drift
+  plot-drift        Visualize 2D or 3D paths
   plot-image        Visualize a dataset as 2D image
+  plot-mag          Plot magnitude of a vector field
   plot-quiver       Visualize a 2D or 3D vector field as a "quiver" plot.
   srdot             Apply Ramo theorem dot product.
   starts            Store "starting" points.
@@ -127,7 +100,8 @@ Commands:
   version           Print the version
 #+end_example
 
-Of particular note, one may set the store via an environment variable:
+Of particular note, to avoid having to always provide the ~-s/--store~
+option one may set the store via an environment variable:
 
 #+begin_example
 export POCHOIR_STORE=/path/to/store
@@ -157,7 +131,7 @@ Options:
   --precision FLOAT               Finish when no changes larger than precision
   --epoch INTEGER                 Number of iterations before any check
   -n, --nepochs INTEGER           Limit number of epochs (def: one epoch)
-  --engine [numpy|numba|torch|cupy]
+  --engine [numpy|numba|torch|cupy|cumba]
                                   The FDM engine to use
   -P, --potential TEXT            Output array holding solution for potential
   -I, --increment TEXT            Output array holding increment (error) on
@@ -167,71 +141,18 @@ Options:
 #+end_example
 
 
+* Documentation
 
+The ~pochoir~ command attempts to be simple and accessible.  However,
+the calculation it performs is not trivial and has many steps.  A user
+must understand these steps and what ~pochoir~ requires.
 
-** Full tests
+The documentation to describe these details is in development.  For
+now see:
 
-*** Tutorial
+- [[./overview.org]] gives a conceptual description of the steps that
+  ~pochoir~ calculates.
 
-The [[./tutorial]], when it is ready gives a full-featured walk through.
+- [[./test/test-sandh2d.org]] a walk through of a full-chain solving a
+  simplified, purely 2D problem.
 
-*** Snakemake driven test
-
-A Snakemake driver exercises a test:
-
-#+begin_example
-❯ snakemake -jall -p -s test/test-sandh2d.sm all
-❯ tree -L 1 test-sandh2d-store/
-test-sandh2d-store/
-├── cupy
-├── domains
-├── drift.json
-├── numba
-├── numpy
-├── torch
-├── weight-col.json
-└── weight-ind.json
-❯ tree -L 2 test-sandh2d-plots/
-test-sandh2d-plots/
-├── cupy
-│   └── initial
-├── numba
-│   └── initial
-├── numpy
-│   └── initial
-└── torch
-    ├── boundary
-    └── initial
-#+end_example
-
-As the plots directory listing implies, this test tries to run the
-various GPU FDM variants.  If any are missing expect to see errors in
-snakemake and gaps in the output.  This test is idempotent so should
-when rerun may not do much.
-
-*** 2D/3D test
-
-Full chain is still a WIP but this provides one "full" test chain:
-
-#+begin_example
-  $ ./test/test-full.sh [store]
-#+end_example
-
-It is idempotent against the store so can be re-run and it won't
-repeat steps if output already exists.  Its precision is chosen low to
-make it run fast enough.
-
-#+begin_example
-❯ tree -L 1  store
-store
-├── boundary
-├── current
-├── domain
-├── increment
-├── initial
-├── paths
-├── potential
-├── starts
-├── velocity
-└── weighting
-#+end_example

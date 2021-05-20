@@ -54,7 +54,7 @@ class Simple:
         return velo
 
 
-def solve(domain, start, velocity, times):
+def solve(domain, start, velocity, times, **kwds):
     '''
     Return the path of points at times from start through velocity field.
     '''

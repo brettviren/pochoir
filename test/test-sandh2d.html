@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-05-20 Thu 13:21 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Strip-and-Hole 2D test</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Brett Viren" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="https://brettviren.github.io/moo/other/readtheorg/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://brettviren.github.io/moo/other/readtheorg/css/readtheorg.css"/>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/jquery.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/readtheorg/js/readtheorg.js"></script>
+<style> #content{max-width:1800px;}</style>
+<style> p{max-width:800px;}</style>
+<style> li{max-width:800px;}</style>
+<style> pre.src{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<style> pre.example{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<style> code{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<script type="text/javascript">
+// @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
+<!--/*--><![CDATA[/*><!--*/
+     function CodeHighlightOn(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.add("code-highlighted");
+         target.classList.add("code-highlighted");
+       }
+     }
+     function CodeHighlightOff(elem, id)
+     {
+       var target = document.getElementById(id);
+       if(null != target) {
+         elem.classList.remove("code-highlighted");
+         target.classList.remove("code-highlighted");
+       }
+     }
+    /*]]>*///-->
+// @license-end
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Strip-and-Hole 2D test</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org711c990">Introduction</a>
+<ul>
+<li><a href="#org46e5966">Running the chain</a></li>
+<li><a href="#org97299e4">Problem parts</a></li>
+</ul>
+</li>
+<li><a href="#org4b2705b">Domains</a></li>
+<li><a href="#org3d1eac0">Generate Initial and Boundary Value Arrays</a>
+<ul>
+<li><a href="#org72ea151">Drift field IVA/BVA</a></li>
+<li><a href="#orgf843ed0">Weighting field IVA/BVA</a></li>
+</ul>
+</li>
+<li><a href="#orga577a6d">Finite-Difference Method</a></li>
+<li><a href="#org4c1a222">Velocity field</a></li>
+<li><a href="#org706ca18">Starts, drift, move</a></li>
+<li><a href="#org5da46db">Induce</a></li>
+<li><a href="#org5732ad3">Export</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org711c990" class="outline-2">
+<h2 id="org711c990">Introduction</h2>
+<div class="outline-text-2" id="text-org711c990">
+<p>
+The 2D strip-and-hole test provides a full chain response calculation
+using <code>pochoir</code>.
+</p>
+</div>
+
+<div id="outline-container-org46e5966" class="outline-3">
+<h3 id="org46e5966">Running the chain</h3>
+<div class="outline-text-3" id="text-org46e5966">
+<p>
+The file <a href="./test-sandh2d.sm">./test-sandh2d.sm</a> is a Snakemake "snake file" which will
+cause the various commands to be run.  In a fresh area, an initial one
+time step is first needed:
+</p>
+
+<pre class="example" id="orgdb0ce1e">
+❯ snakemake -jall -p -s test/test-sandh2d.sm test-sandh2d-store/gencfg.lst
+</pre>
+
+<p>
+This will generate a number of JSON configuration files from a single
+master Jsonnet file <a href="./test-sandh2d.jsonnet">./test-sandh2d.jsonnet</a>.  Subsequent edits to the
+Jsonnet file will cause the JSON configuration files to be rebuilt.
+</p>
+
+<p>
+To run the calculation chain itself uses the <code>all</code> target:
+</p>
+
+<pre class="example" id="org175cc19">
+❯ snakemake -jall -p -s test/test-sandh2d.sm all
+</pre>
+
+<p>
+This will populate <code>test-sandh2d-store/</code> directory with array (<code>.npz</code>) and
+other result files and <code>test-sandh2d-plots</code> with visualizations of those
+results.  A selection of those plots are shown below.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org97299e4" class="outline-3">
+<h3 id="org97299e4">Problem parts</h3>
+<div class="outline-text-3" id="text-org97299e4">
+<p>
+The problem factors into these parts
+</p>
+
+<dl class="org-dl">
+<dt>domain</dt><dd>define a spacial grid on which to calculate a field (scalar potential)</dd>
+<dt>gen</dt><dd>generate initial (IVA) and boundary (BVA) value arrays for a field</dd>
+<dt>fdm</dt><dd>solve Laplace equation given IVA/BVA to produce a field (drift or weighting)</dd>
+<dt>velo</dt><dd>for drift field, calculate the vector velocity field</dd>
+<dt>starts</dt><dd>define starting points for drift paths</dd>
+<dt>drift</dt><dd>solve initial value problem to determine the drift paths through the velocity field</dd>
+<dt>move</dt><dd>transfer drift paths to different locations exploiting symmetries</dd>
+<dt>induce</dt><dd>calculate induced charge on an electrode through its weighting field</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-org4b2705b" class="outline-2">
+<h2 id="org4b2705b">Domains</h2>
+<div class="outline-text-2" id="text-org4b2705b">
+<p>
+A domain defines a spatial grid.  The <code>pochoir</code> command can generate a
+domain but in this example it is created directly from the master
+Jsonnet file.
+</p>
+
+<p>
+There are two domains in this example.  The <b>drift</b> domain is used for
+calculating the applied electrostatic drift field and the <b>weight</b>
+domain is used for calculating the two weighting fields.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3d1eac0" class="outline-2">
+<h2 id="org3d1eac0">Generate Initial and Boundary Value Arrays</h2>
+<div class="outline-text-2" id="text-org3d1eac0">
+<p>
+The <i>initial value array</i> (IVA) defines the a scalar field on every grid
+point of a domain.  It is used as the starting point for the eventual
+FDM solution.
+</p>
+
+<p>
+In principle, most of the grid points may be set to arbitrary values
+but the closer they can be to the solution the faster FDM will
+converge.
+</p>
+
+<p>
+Most important is the IVA must define values on grid points that are
+associated with <i>boundaries</i>.  A boundary is any grid point which is set
+to <code>True</code> in the <i>boundary value array</i> (BVA).  These points should
+represent electrodes at fixed potential.  Thus the BVA says which grid
+points are "on" electrodes and the IVA says what the potential is of
+the electrode at that point.
+</p>
+</div>
+
+<div id="outline-container-org72ea151" class="outline-3">
+<h3 id="org72ea151">Drift field IVA/BVA</h3>
+<div class="outline-text-3" id="text-org72ea151">
+<p>
+The drift field IVA paints a general gradient between the "cathode" plane at the top of the domain and the "ground" plane at the bottom.  It then overlays the actual potential of these two planes as well as segments of the anode strip planes.  Note, these latter are nearly the same value as the gradient.
+</p>
+
+<img src="test-sandh2d-plots/initial/drift-linear.png" width="45%">
+<img src="test-sandh2d-plots/boundary/drift-linear.png" width="45%">
+
+<p>
+The units for the color axis are Volts and spatial axes are mm.  Thus the nominal drift field is 500 V/cm.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf843ed0" class="outline-3">
+<h3 id="orgf843ed0">Weighting field IVA/BVA</h3>
+<div class="outline-text-3" id="text-orgf843ed0">
+<p>
+This example has an induction (<code>ind</code>) and collection (<code>col</code>) plane of strips and their IVA/BVA are shown below.  No attempt to "pre guess" the general solution values is attempted.  The domain for weighting fields are larger because they do not share the transnational/periodic symmetry which the drift field has.
+</p>
+
+<img src="test-sandh2d-plots/initial/weight-ind-linear.png" width="45%">
+<img src="test-sandh2d-plots/boundary/weight-ind-linear.png" width="45%">
+
+<img src="test-sandh2d-plots/initial/weight-col-linear.png" width="45%">
+<img src="test-sandh2d-plots/boundary/weight-col-linear.png" width="45%">
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orga577a6d" class="outline-2">
+<h2 id="orga577a6d">Finite-Difference Method</h2>
+<div class="outline-text-2" id="text-orga577a6d">
+<p>
+The finite-difference method (FDM) for solving the Laplace equation is
+essentially an iteration of convolutions with a "stencil" on an array.
+The array begins as the IVA.  Each grid point is set to the average of
+its 4 (2D) or 6 (3D) nearest neighbor values.  After each convolution
+the grid points with value <code>True</code> in the BVA are reset to their values
+in the IVA.  Boundary conditions (not to be confused with boundary
+values!) are set based on whether the edge of the array is considered
+fixed or periodic.  For this example, the axis 0 (top and bottom
+edges) are fixed and axis 1 (sides) are periodic.
+</p>
+
+<p>
+The run of FDM is parameterized by:
+</p>
+
+<dl class="org-dl">
+<dt>epoch</dt><dd>number of iteration of convolution to perform with no check on precision.</dd>
+<dt>nepoch</dt><dd>number of epochs to execute before quiting, regardless of obtained precision</dd>
+<dt>precision</dt><dd>the minimum allowed maximum of grid values between iteration.</dd>
+</dl>
+
+<p>
+The iteration will terminate before <code>nepoch</code> iterations are performed if
+the maximum change across the domain between two iterations is less
+than the given <i>precision</i>.  This test is performed at the end of each
+<b>epoch</b> iterations.  The test itself is costly so the value <b>epoch</b> should
+not be too small.  OTOH, too large and many unnecessary iterations
+will be performed even though the desired precision has been
+surpassed.  
+</p>
+
+<p>
+The drift and two weighting field solutions and the "increment"
+difference results are:
+</p>
+
+<img src="test-sandh2d-plots/potential/drift-linear.png" width="45%">
+<img src="test-sandh2d-plots/increment/drift-linear.png" width="45%">
+
+
+<img src="test-sandh2d-plots/potential/weight-ind-linear.png" width="45%">
+<img src="test-sandh2d-plots/increment/weight-ind-linear.png" width="45%">
+
+
+<img src="test-sandh2d-plots/potential/weight-col-linear.png" width="45%">
+<img src="test-sandh2d-plots/increment/weight-col-linear.png" width="45%">
+</div>
+</div>
+
+
+
+
+
+<div id="outline-container-org4c1a222" class="outline-2">
+<h2 id="org4c1a222">Velocity field</h2>
+<div class="outline-text-2" id="text-org4c1a222">
+<p>
+We take the gradient of the drift field scalar potential to get the
+E-field.  And then given <a href="https://lar.bnl.gov/properties/trans.html">LAr properties for electron transport</a> and a
+temperature of the LAr we may calculate a vector velocity field.  It
+gives the velocity of a drifting electron for points on the domain
+grid.  We visualize the scalar magnitude field and zoom in on the
+vector field itself near the central strip hole:
+</p>
+
+<img src="test-sandh2d-plots/velocity/drift-mag.png" width="45%">
+<img src="test-sandh2d-plots/velocity/drift-quiver.png" width="45%">
+
+
+<p>
+<b>FIXME why is the velocity so low???</b>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org706ca18" class="outline-2">
+<h2 id="org706ca18">Starts, drift, move</h2>
+<div class="outline-text-2" id="text-org706ca18">
+<p>
+The drift paths through the velocity field are then calculated.  This
+begins by defining a series of starting points ("<i>starts</i>").  These are
+ultimately provided in the master Jsonnet configuration file and
+placed into the <code>pochoir</code> store.  The <code>drift</code> command then solves the
+<i>initial value problem</i>.  Given an electron on a given start at \(t=0\),
+the solution finds the location of the electron at a series of times
+\(t=t_i\).  These points are taken to lie on 100 ns intervals.
+</p>
+
+
+<img src="test-sandh2d-plots/paths/drift.png" width="45%">
+
+<p>
+The <i>starts</i> are chosen to span the canonical six <i>impact positions</i> on
+the lower half of a strip.  Given the periodic symmetry of the drift
+field, the six solutions for the initial value problem can be simply
+copied by integral number of pitch distances in order to populate a 
+larger domain such required for the next step.
+</p>
+
+<p>
+<b>FIXME: make some plot to show this "move" step</b>
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org5da46db" class="outline-2">
+<h2 id="org5da46db">Induce</h2>
+<div class="outline-text-2" id="text-org5da46db">
+<p>
+The penultimate step is to calculate the induced current on each
+electrode in the domain from each step of each path.  The induced
+current is merely the change in charge over one step divided by the
+time interval of that step.  The induced charge is the value of the
+weighting field at the step multiplied by the charge of the drifting
+element (taken as having unit charge).
+</p>
+
+<p>
+Thus, to get current on the central strip we interpolate the value of
+the weighting field from its grid measurement points to each step
+point of each of the six paths.  To get current on the off-center
+strips we make use of the equivalence: a path over strip N induced
+current on strip 0 as the same path over strip N (given an
+integral-pitch displacement) induces on strip 0.  The application of
+<i>move</i> operation above provides for this.
+</p>
+
+<p>
+<b>FIXME: add plots of current as tick vs impact</b>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5732ad3" class="outline-2">
+<h2 id="org5732ad3">Export</h2>
+<div class="outline-text-2" id="text-org5732ad3">
+<p>
+The arrays of induced current finally must be exported to Wire-Cell Toolkit JSON format.
+</p>
+
+<p>
+<b>FIXME: develop the code to do this&#x2026;</b>
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Brett Viren</p>
+<p class="date">Created: 2021-05-20 Thu 13:21</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

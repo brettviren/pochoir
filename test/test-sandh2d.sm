@@ -1,6 +1,8 @@
 #!/usr/bin/env snakemake
 # -*- snakemake -*-
 
+# run from test/ directory
+
 store="test-sandh2d-store"
 plots="test-sandh2d-plots"
 
@@ -41,7 +43,7 @@ VALUE_TAXONS = ['initial', 'potential', 'increment']
 
 rule configs:
     input:
-        "test/test-sandh2d.jsonnet"
+        "test-sandh2d.jsonnet"
     output:
         f'{store}/gencfg.lst',
     shell: '''
@@ -110,7 +112,7 @@ rule field_grad:
         plt = f'{plots}/potential/{{field}}-mag.png'
     shell: '''
     pochoir --store {store} grad -s {input} -G {output.arr}; \
-    pochoir --store {store} plot-mag -a {output.arr} -o {output.plt}
+    pochoir --store {store} plot-mag -u 'V/cm' -a {output.arr} -o {output.plt}
     '''
 
 rule plots_linear:
@@ -218,6 +220,8 @@ def all_rule():
                    field=FIELDS, taxon=TAXONS),
             expand(rules.plots_signedlog.output,
                    field=FIELDS, taxon=VALUE_TAXONS),
+            expand(rules.field_grad.output,
+                   field=["drift"]),
             expand(rules.velo.output, field=["drift"]),
             expand(rules.plot_velo.output, field=["drift"]),
             expand(rules.drift.output, field=["drift"]),

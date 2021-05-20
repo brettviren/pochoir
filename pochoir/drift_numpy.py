@@ -2,7 +2,7 @@
 '''
 Solve initial value problem to get drift paths using pytorch
 '''
-
+import math
 import numpy
 from scipy.integrate import solve_ivp
 from scipy.interpolate import RegularGridInterpolator as RGI
@@ -13,7 +13,7 @@ class Simple:
     Simple ODE calable
     '''
 
-    def __init__(self, domain, vfield):
+    def __init__(self, domain, vfield, verbose=False):
         '''
         The vfield give vector feild on domain.
         '''
@@ -22,7 +22,7 @@ class Simple:
         origin = domain.origin
         points = list()
         self.bb = domain.bb
-
+        self.verbose = verbose
         self.calls = 0
 
         for dim in range(len(domain.shape)):
@@ -66,16 +66,19 @@ class Simple:
         speed_unit = units.mm/units.us
         if self.inside(pos):
             velo = self.interpolate(pos)
-            print(f'interp:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm v={velo/speed_unit} {self.bb}')
+            what = "interp"
         else:
             velo = self.extrapolate(pos)
-            print(f'extrap:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm v={velo/speed_unit} {self.bb}')
+            what = "extrap"
 
+        vmag = math.sqrt(sum([v*v for v in velo]))
+        if self.verbose:
+            print(f'{what}:{self.calls:4d}: t={time/units.us:.3f} us, r={pos/units.mm} mm v={velo/speed_unit} vmag={vmag/speed_unit:.3f} mm/us')
         return velo
 
 
 
-def solve(domain, start, velocity, times):
+def solve(domain, start, velocity, times, verbose=False):
     '''
     Return the path of points at times from start through velocity field.
     '''
@@ -83,7 +86,7 @@ def solve(domain, start, velocity, times):
     velocity = [numpy.array(v) for v in velocity]
     times = numpy.array(times)
     print(f'start @{start}, times={times/units.us}')
-    func = Simple(domain, velocity)
+    func = Simple(domain, velocity, verbose=verbose)
     #res = odeint(func, start, times, rtol=0.01, atol=0.01)
     res = solve_ivp(func, [times[0], times[-1]], start, t_eval=times,
                     rtol=0.0001, atol=0.0001,

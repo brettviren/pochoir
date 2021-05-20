@@ -3,12 +3,12 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-03-22 Mon 10:20 -->
+<!-- 2021-05-20 Thu 13:19 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Solve field response with FDM</title>
+<title>Calculate electrical response induced by drifting charge</title>
 <meta name="generator" content="Org mode" />
-<meta name="author" content="BV" />
+<meta name="author" content="Brett Viren" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
   .title  { text-align: center;
@@ -193,6 +193,18 @@
   .org-svg { width: 90%; }
   /*]]>*/-->
 </style>
+<link rel="stylesheet" type="text/css" href="https://brettviren.github.io/moo/other/readtheorg/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://brettviren.github.io/moo/other/readtheorg/css/readtheorg.css"/>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/jquery.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://brettviren.github.io/moo/other/readtheorg/js/readtheorg.js"></script>
+<style> #content{max-width:1800px;}</style>
+<style> p{max-width:800px;}</style>
+<style> li{max-width:800px;}</style>
+<style> pre.src{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<style> pre.example{border-radius: 5px; background-color:#333; color:#0f0;}</style>
+<style> code{border-radius: 5px; background-color:#333; color:#0f0;}</style>
 <script type="text/javascript">
 // @license magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt Public Domain
 <!--/*--><![CDATA[/*><!--*/
@@ -218,77 +230,47 @@
 </head>
 <body>
 <div id="content">
-<h1 class="title">Solve field response with FDM</h1>
-
-<div id="outline-container-org64ac60e" class="outline-2">
-<h2 id="org64ac60e"><span class="section-number-2">1</span> Overview</h2>
-<div class="outline-text-2" id="text-1">
-<p>
-See the <a href="manual.html">manual</a> for details.
-</p>
-
-<p>
-The <code>pochoir</code> package solves for <i>field responses</i> which model the current
-induced in electrodes by electric charge (eg, electrons from
-ionization) drifting through an electrostatic field applied to the
-electrodes.
-</p>
-
-<p>
-The overall solution is factored into a number of core sub-problems:
-</p>
-
-<ul class="org-ul">
-<li>Specify electrodes and their potentials on a problem domain.</li>
-<li>Solve Laplace <i>boundary value problems</i> in 2D and 3D using the
-finite-difference method (FDM) to determine the electrostatic
-potential fields from the applied and the "weighting" electrode
-voltages.</li>
-<li>Solve the <i>initial value problem</i> to determine paths of charge
-driftiing in the applied potential.</li>
-<li>Apply the <a href="https://en.wikipedia.org/wiki/Shockley%E2%80%93Ramo_theorem">Shockley-Ramo theorem</a> to combine the above solutions to
-get currents induced in electrodes.</li>
+<h1 class="title">Calculate electrical response induced by drifting charge</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orgd25e5dc">Introduction</a></li>
+<li><a href="#orgf6b8419">Install</a></li>
+<li><a href="#org7cfb998">Usage</a></li>
+<li><a href="#org7693be6">Documentation</a></li>
 </ul>
-
-<p>
-These sub-problems may be composed by connecting output from one to
-input of another through the <code>pochoir</code> data store.  <code>pochoir</code> can also
-convert data in the store to graphics formats (PNG or PDF) for
-visualization and can export to other formats (VTK) for use in other
-visualization tools (<code>paraview</code>).  The <code>pochoir</code> store may use an HDF5
-file.  Following an HDF5 model, <code>pochoir</code> may also use a collection of
-Numpy NPZ (dataset) and JSON (metadata) files grouped by file system
-directories.
-</p>
+</div>
 </div>
 
-<div id="outline-container-org2b16d47" class="outline-3">
-<h3 id="org2b16d47"><span class="section-number-3">1.1</span> The name</h3>
-<div class="outline-text-3" id="text-1-1">
+<div id="outline-container-orgd25e5dc" class="outline-2">
+<h2 id="orgd25e5dc">Introduction</h2>
+<div class="outline-text-2" id="text-orgd25e5dc">
 <p>
-The core Laplace problems are solved in <code>pochoir</code> with FDM.  The core
-operation of FDM is sometimes described as a "stencil" convolution.
-The name <i>pochoir</i> describes a stencil-based art style.  No constraint
-is intended on your personal <a href="https://www.google.com/search?q=pronounce+pochoir">pronunciation of "pochoir"</a>.
+This package solves Laplace, initial value and other problems in order
+to produce the current response on electrodes due to drifting of
+nearby charge.
+</p>
+
+<p>
+About the name: the core Laplace problems are solved in <code>pochoir</code> with
+the finite-difference method (FDM).  The core operation of FDM is
+sometimes described as a "stencil" convolution.  The name <i>pochoir</i>
+describes a stencil-based art style.  No constraint is intended on
+your personal <a href="https://www.google.com/search?q=pronounce+pochoir">pronunciation of "pochoir"</a>.
 </p>
 </div>
 </div>
-</div>
 
-
-<div id="outline-container-org2db72c1" class="outline-2">
-<h2 id="org2db72c1"><span class="section-number-2">2</span> Install</h2>
-<div class="outline-text-2" id="text-2">
+<div id="outline-container-orgf6b8419" class="outline-2">
+<h2 id="orgf6b8419">Install</h2>
+<div class="outline-text-2" id="text-orgf6b8419">
 <p>
 <code>pochoir</code> installs in the "usual Python way".  Use of <code>pip</code> and a Python
-virtual environment is recommended.  
+virtual environment is recommended.   
 </p>
 
-<p>
-Eg:
-</p>
-
-<pre class="example" id="orgbb0f78b">
+<pre class="example" id="org9b76b15">
 python3 -m venv venv
 source venv/bin/activiate
 </pre>
@@ -297,16 +279,16 @@ source venv/bin/activiate
 Or maybe you prefer <code>direnv</code>
 </p>
 
-<pre class="example" id="org016e1bb">
+<pre class="example" id="org8558b10">
 echo layout python3 &gt; .envrc
 direnv allow
 </pre>
 
 <p>
-Then install either for use:
+To install the base support (no support for GPU, plots, config)
 </p>
 
-<pre class="example" id="org6f1a2d5">
+<pre class="example" id="org37a86a1">
 pip install git+https://github.com/brettviren/pochoir.git@HEAD
 </pre>
 
@@ -314,22 +296,33 @@ pip install git+https://github.com/brettviren/pochoir.git@HEAD
 Or for development
 </p>
 
-<pre class="example" id="orge26dc48">
+<pre class="example" id="org2d7d21f">
 git clone git@github.com:brettviren/pochoir.git
 cd pochoir
 pip install -e .
 </pre>
 
 <p>
-Additional commands may be needed to allow PyTorch to use your GPU.
+A number of "extra" support is included mostly for PyTorch, numba, or
+cupy to try to accelerate some bottlenecks on GPU or via
+multiprocessing.
+</p>
+
+<pre class="example" id="org23c1f99">
+pip install -e .[torch,cupy,numba,vtk,plots,hdf5]
+</pre>
+
+<p>
+Additional setup and of course hardware may be needed to use the GPU
+support.
 </p>
 </div>
 </div>
 
 
-<div id="outline-container-org3858ffd" class="outline-2">
-<h2 id="org3858ffd"><span class="section-number-2">3</span> Usage</h2>
-<div class="outline-text-2" id="text-3">
+<div id="outline-container-org7cfb998" class="outline-2">
+<h2 id="org7cfb998">Usage</h2>
+<div class="outline-text-2" id="text-org7cfb998">
 <p>
 The <code>pochoir</code> command line user interface provides online help:
 </p>
@@ -339,36 +332,46 @@ The <code>pochoir</code> command line user interface provides online help:
 </pre>
 </div>
 
-<pre class="example" id="org1f2282a">
+<pre class="example" id="org68e5663">
 Usage: pochoir [OPTIONS] COMMAND [ARGS]...
 
   pochoir command line interface
 
 Options:
-  -s, --store PATH         File for primary data storage (input and maybe
-                           output)
-
-  -o, --outstore PATH      File for output (primary only input)
-  -d, --device [cpu|cuda]  Set device on which to calculate
-  --help                   Show this message and exit.
+  -s, --store PATH     File for primary data storage (input and maybe output)
+  -o, --outstore PATH  File for output (primary only input)
+  --help               Show this message and exit.
 
 Commands:
-  domain            Produce a "domain" and store it to the output dataset.
+  bc-interp         Interpolate 2D solution into 3D boundary condition
+  domain            Produce a "domain" and store it to the named dataset.
+  drift             Calculate drift paths.
   example           Generate a boundary and initial array example (try...
   export-vtk-image  Export a dataset to a vtk file of same name
-  fdm               Solve a Laplace boundary value problem with finite...
+  fdm               Apply finite-difference method.
+  gen               Generate initial and boundary value arrays from a...
+  gencfg            Generate JSON configuration files from master file.
   grad              Calculate the gradient of a scalar field.
+  induce            Calculate induced current.
   init              Initialize a problem with a shape file.
+  ls                List the store store
+  move-paths        Move paths along offset vector.
+  plot-drift        Visualize 2D or 3D paths
   plot-image        Visualize a dataset as 2D image
+  plot-mag          Plot magnitude of a vector field
   plot-quiver       Visualize a 2D or 3D vector field as a "quiver" plot.
+  srdot             Apply Ramo theorem dot product.
+  starts            Store "starting" points.
+  velo              Calculate a velocity field from a potential field
   version           Print the version
 </pre>
 
 <p>
-Of particular note, one may set the store via an environment variable:
+Of particular note, to avoid having to always provide the <code>-s/--store</code>
+option one may set the store via an environment variable:
 </p>
 
-<pre class="example" id="orgc7fd67c">
+<pre class="example" id="orgbce8bfb">
 export POCHOIR_STORE=/path/to/store
 </pre>
 
@@ -381,30 +384,62 @@ Individual commands provide more details on their use:
 </pre>
 </div>
 
-<pre class="example" id="orga471e55">
-Usage: pochoir fdm [OPTIONS] SOLUTION ERROR
+<pre class="example" id="orgd24abcb">
+Usage: pochoir fdm [OPTIONS]
 
-  Solve a Laplace boundary value problem with finite difference method
-  storing the result as named solution.  The error names an output array to
-  hold difference in last two iterations.
+  Apply finite-difference method.
+
+  Solve Laplace equation given initial/boundary value arrays to produce a
+  scalar potential array.
 
 Options:
-  -i, --initial TEXT     Name initial value array
-  -b, --boundary TEXT    Name the boundary array
-  -e, --edges TEXT       Comma separated list of 'fixed' or 'periodic' giving
-                         domain edge conditions
+  -i, --initial TEXT              Input initial value array
+  -b, --boundary TEXT             Input the boundary array
+  -e, --edges TEXT                Comma separated list of 'fixed' or
+                                  'periodic' giving domain edge conditions
 
-  --precision FLOAT      Finish when no changes larger than precision
-  --epoch INTEGER        Number of iterations before any check
-  -n, --nepochs INTEGER  Limit number of epochs (def: one epoch)
-  --help                 Show this message and exit.
+  --precision FLOAT               Finish when no changes larger than precision
+  --epoch INTEGER                 Number of iterations before any check
+  -n, --nepochs INTEGER           Limit number of epochs (def: one epoch)
+  --engine [numpy|numba|torch|cupy|cumba]
+                                  The FDM engine to use
+  -P, --potential TEXT            Output array holding solution for potential
+  -I, --increment TEXT            Output array holding increment (error) on
+                                  the solution
+
+  --help                          Show this message and exit.
 </pre>
+</div>
+</div>
+
+
+<div id="outline-container-org7693be6" class="outline-2">
+<h2 id="org7693be6">Documentation</h2>
+<div class="outline-text-2" id="text-org7693be6">
+<p>
+The <code>pochoir</code> command attempts to be simple and accessible.  However,
+the calculation it performs is not trivial and has many steps.  A user
+must understand these steps and what <code>pochoir</code> requires.
+</p>
+
+<p>
+The documentation to describe these details is in development.  For
+now see:
+</p>
+
+<ul class="org-ul">
+<li><a href="./overview.html">./overview.html</a> gives a conceptual description of the steps that
+<code>pochoir</code> calculates.</li>
+
+<li><a href="./test/test-sandh2d.html">./test/test-sandh2d.html</a> a walk through of a full-chain solving a
+simplified, purely 2D problem.</li>
+</ul>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="author">Author: BV</p>
-<p class="date">Created: 2021-03-22 Mon 10:20</p>
+<p class="author">Author: Brett Viren</p>
+<p class="date">Created: 2021-05-20 Thu 13:19</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
