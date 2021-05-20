@@ -72,7 +72,7 @@ def set_limits(limits):
         plt.ylim(*ylim)
 
 
-def quiver(varr, fname, domain, step=1, limits=None):
+def quiver(varr, fname, domain, step=1, limits=None, scale=1.0):
     '''
     Plot a vector field.
 
@@ -93,7 +93,8 @@ def quiver(varr, fname, domain, step=1, limits=None):
     plt.clf()
     if ndim == 2:               # 2D
         plt.quiver(mg[1][slcs], mg[0][slcs],
-                   varr[1][slcs], varr[0][slcs], units='xy')
+                   varr[1][slcs], varr[0][slcs],
+                   scale=scale, units='xy')
         set_limits(limits)
             
     else:                       # 3D

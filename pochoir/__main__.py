@@ -351,7 +351,7 @@ def velo(ctx, temperature, potential, velocity):
     domain = md['domain']
     dom = ctx.obj.get_domain(domain)
 
-    efield = pochoir.arrays.gradient(pot, dom.spacing)
+    efield = pochoir.arrays.gradient(pot, *dom.spacing)
     emag = pochoir.arrays.vmag(efield)
     mu = pochoir.lar.mobility(emag, temp)
     varr = [e*mu for e in efield]
@@ -434,12 +434,10 @@ def drift(ctx, paths, starts, velocity, verbose, engine, steps):
     velo, md = ctx.obj.get(velocity, True)
     domain = md['domain']
     dom = ctx.obj.get_domain(domain)
-    velo = [v/s for v,s in zip(velo, dom.spacing)]
-
-
 
     # shape: (nstarts, nticks, ndims)
-    thepaths = pochoir.arrays.zeros((len(start_points), len(ticks), len(dom.shape)))
+    thepaths = pochoir.arrays.zeros((len(start_points), len(ticks),
+                                     len(dom.shape)))
     for ind, point in enumerate(start_points):
         path = drifter(dom, point, velo, ticks, verbose=verbose)
         thepaths[ind]=path
@@ -667,12 +665,14 @@ def plot_mag(ctx, array, output, units):
               help="Output graphics file")
 @click.option("--step", default=1,
               help="Step over which to sample the array")
+@click.option("--scale", default=None, type=float,
+              help="Scale the arrows, larger number makes smaller arrows")
 @click.option("--xlim", default=None, type=str,
               help="Limit X plot range")
 @click.option("--ylim", default=None, type=str,
               help="Limit Y plot range")
 @click.pass_context
-def plot_quiver(ctx, array, output, step, xlim, ylim):
+def plot_quiver(ctx, array, output, step, scale, xlim, ylim):
     '''
     Visualize a 2D or 3D vector field as a "quiver" plot.
     '''
@@ -686,7 +686,7 @@ def plot_quiver(ctx, array, output, step, xlim, ylim):
         ylim = pochoir.arrays.fromstr1(ylim)
 
     pochoir.plots.quiver(arr, output, domain=dom, step=step,
-                         limits=(xlim, ylim))
+                         limits=(xlim, ylim), scale=scale)
 
 
 @cli.command("plot-drift")

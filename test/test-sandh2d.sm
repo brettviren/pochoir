@@ -154,7 +154,9 @@ rule plot_velo:
         quiver = f'{plots}/velocity/{{field}}-quiver.png',
         mag = f'{plots}/velocity/{{field}}-mag.png'
     shell: '''
-    pochoir --store {store} plot-quiver --ylim '15,22' \
+    pochoir --store {store} plot-quiver \
+        --scale 10000000.0 \
+        --ylim '15,22' \
         -a {input} -o {output.quiver}; \
     pochoir --store {store} plot-mag \
         -a {input} -o {output.mag} -u "mm/us"

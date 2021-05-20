@@ -93,22 +93,20 @@ def to_like(array, like):
     return numpy.array(array)
 
 
-def gradient(array, spacing = None):
+def gradient(array, *spacing):
     '''
     Return the finite difference gradient of the array.
     '''
+    print (f'gradient spacing: {spacing}')
     if isinstance(array, numpy.ndarray):
-        return numpy.array(numpy.gradient(array))
+        return numpy.array(numpy.gradient(array, *spacing))
 
     # Amazingly, PyTorch has no equivalent.  An alternative solution
     # is to reimplment numpy.gradient() in terms of tensor slicing and
     # arithmetic operations.  At the cost of possible GPU->CPU->GPU
     # transit, for now we do the dirty:
     a = array.to('cpu').numpy()
-    gvec = numpy.gradient(a)
-    if spacing is not None:
-        print(spacing)
-        gvec = [numpy.array(v/s) for v,s in zip(gvec, spacing)]
+    gvec = numpy.gradient(a, spacing)
     g = numpy.array(gvec)
     return to_torch(g, device=array.device)
     

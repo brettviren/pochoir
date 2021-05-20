@@ -162,10 +162,7 @@ vector field itself near the central strip hole:
 <img src="test-sandh2d-plots/velocity/drift-quiver.png" width="45%">
 #+END_export
 
-
-*FIXME why is the velocity so low???*
-
-* Starts, drift, move
+* Path starts, drifts and move
 
 The drift paths through the velocity field are then calculated.  This
 begins by defining a series of starting points ("/starts/").  These are
@@ -186,7 +183,11 @@ field, the six solutions for the initial value problem can be simply
 copied by integral number of pitch distances in order to populate a 
 larger domain such required for the next step.
 
-*FIXME: make some plot to show this "move" step*
+** TODO
+
+- [ ] The center line path is exactly on a saddle point so "crosses over" to the "wrong" side
+- [ ] The edge path, though not subject to the saddle point problem does misrepresent the nearby phase space by going through the "gap" between strips instead of being directed into the hole.
+- [ ] implement "move" and make some plot to show it
 
 
 * Induce
@@ -206,11 +207,15 @@ current on strip 0 as the same path over strip N (given an
 integral-pitch displacement) induces on strip 0.  The application of
 /move/ operation above provides for this.
 
-*FIXME: add plots of current as tick vs impact*
+** TODO
+
+- [ ] add plots of current as tick vs impact
 
 * Export
 
 The arrays of induced current finally must be exported to Wire-Cell Toolkit JSON format.
 
-*FIXME: develop the code to do this...*
+** TODO
+
+- [ ]  develop the code to actually do this...
 

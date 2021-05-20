@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-05-20 Thu 13:21 -->
+<!-- 2021-05-20 Thu 14:27 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Strip-and-Hole 2D test</title>
@@ -257,47 +257,59 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org711c990">Introduction</a>
+<li><a href="#orge680853">Introduction</a>
 <ul>
-<li><a href="#org46e5966">Running the chain</a></li>
-<li><a href="#org97299e4">Problem parts</a></li>
+<li><a href="#orgf4c46ab">Running the chain</a></li>
+<li><a href="#org9102dac">Problem parts</a></li>
 </ul>
 </li>
-<li><a href="#org4b2705b">Domains</a></li>
-<li><a href="#org3d1eac0">Generate Initial and Boundary Value Arrays</a>
+<li><a href="#orge931174">Domains</a></li>
+<li><a href="#orgcdc45d7">Generate Initial and Boundary Value Arrays</a>
 <ul>
-<li><a href="#org72ea151">Drift field IVA/BVA</a></li>
-<li><a href="#orgf843ed0">Weighting field IVA/BVA</a></li>
+<li><a href="#orgdc93218">Drift field IVA/BVA</a></li>
+<li><a href="#org20e9bd1">Weighting field IVA/BVA</a></li>
 </ul>
 </li>
-<li><a href="#orga577a6d">Finite-Difference Method</a></li>
-<li><a href="#org4c1a222">Velocity field</a></li>
-<li><a href="#org706ca18">Starts, drift, move</a></li>
-<li><a href="#org5da46db">Induce</a></li>
-<li><a href="#org5732ad3">Export</a></li>
+<li><a href="#orgb440ef3">Finite-Difference Method</a></li>
+<li><a href="#org2fda6db">Velocity field</a></li>
+<li><a href="#org06c1952">Path starts, drifts and move</a>
+<ul>
+<li><a href="#org717c716">TODO</a></li>
+</ul>
+</li>
+<li><a href="#org8f21b56">Induce</a>
+<ul>
+<li><a href="#org46d5e0d">TODO</a></li>
+</ul>
+</li>
+<li><a href="#orge0e9156">Export</a>
+<ul>
+<li><a href="#org19628bf">TODO</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org711c990" class="outline-2">
-<h2 id="org711c990">Introduction</h2>
-<div class="outline-text-2" id="text-org711c990">
+<div id="outline-container-orge680853" class="outline-2">
+<h2 id="orge680853">Introduction</h2>
+<div class="outline-text-2" id="text-orge680853">
 <p>
 The 2D strip-and-hole test provides a full chain response calculation
 using <code>pochoir</code>.
 </p>
 </div>
 
-<div id="outline-container-org46e5966" class="outline-3">
-<h3 id="org46e5966">Running the chain</h3>
-<div class="outline-text-3" id="text-org46e5966">
+<div id="outline-container-orgf4c46ab" class="outline-3">
+<h3 id="orgf4c46ab">Running the chain</h3>
+<div class="outline-text-3" id="text-orgf4c46ab">
 <p>
 The file <a href="./test-sandh2d.sm">./test-sandh2d.sm</a> is a Snakemake "snake file" which will
 cause the various commands to be run.  In a fresh area, an initial one
 time step is first needed:
 </p>
 
-<pre class="example" id="orgdb0ce1e">
+<pre class="example" id="org45c1b1a">
 ❯ snakemake -jall -p -s test/test-sandh2d.sm test-sandh2d-store/gencfg.lst
 </pre>
 
@@ -311,7 +323,7 @@ Jsonnet file will cause the JSON configuration files to be rebuilt.
 To run the calculation chain itself uses the <code>all</code> target:
 </p>
 
-<pre class="example" id="org175cc19">
+<pre class="example" id="org525cb1e">
 ❯ snakemake -jall -p -s test/test-sandh2d.sm all
 </pre>
 
@@ -323,9 +335,9 @@ results.  A selection of those plots are shown below.
 </div>
 </div>
 
-<div id="outline-container-org97299e4" class="outline-3">
-<h3 id="org97299e4">Problem parts</h3>
-<div class="outline-text-3" id="text-org97299e4">
+<div id="outline-container-org9102dac" class="outline-3">
+<h3 id="org9102dac">Problem parts</h3>
+<div class="outline-text-3" id="text-org9102dac">
 <p>
 The problem factors into these parts
 </p>
@@ -346,9 +358,9 @@ The problem factors into these parts
 
 
 
-<div id="outline-container-org4b2705b" class="outline-2">
-<h2 id="org4b2705b">Domains</h2>
-<div class="outline-text-2" id="text-org4b2705b">
+<div id="outline-container-orge931174" class="outline-2">
+<h2 id="orge931174">Domains</h2>
+<div class="outline-text-2" id="text-orge931174">
 <p>
 A domain defines a spatial grid.  The <code>pochoir</code> command can generate a
 domain but in this example it is created directly from the master
@@ -363,9 +375,9 @@ domain is used for calculating the two weighting fields.
 </div>
 </div>
 
-<div id="outline-container-org3d1eac0" class="outline-2">
-<h2 id="org3d1eac0">Generate Initial and Boundary Value Arrays</h2>
-<div class="outline-text-2" id="text-org3d1eac0">
+<div id="outline-container-orgcdc45d7" class="outline-2">
+<h2 id="orgcdc45d7">Generate Initial and Boundary Value Arrays</h2>
+<div class="outline-text-2" id="text-orgcdc45d7">
 <p>
 The <i>initial value array</i> (IVA) defines the a scalar field on every grid
 point of a domain.  It is used as the starting point for the eventual
@@ -388,9 +400,9 @@ the electrode at that point.
 </p>
 </div>
 
-<div id="outline-container-org72ea151" class="outline-3">
-<h3 id="org72ea151">Drift field IVA/BVA</h3>
-<div class="outline-text-3" id="text-org72ea151">
+<div id="outline-container-orgdc93218" class="outline-3">
+<h3 id="orgdc93218">Drift field IVA/BVA</h3>
+<div class="outline-text-3" id="text-orgdc93218">
 <p>
 The drift field IVA paints a general gradient between the "cathode" plane at the top of the domain and the "ground" plane at the bottom.  It then overlays the actual potential of these two planes as well as segments of the anode strip planes.  Note, these latter are nearly the same value as the gradient.
 </p>
@@ -404,9 +416,9 @@ The units for the color axis are Volts and spatial axes are mm.  Thus the nomina
 </div>
 </div>
 
-<div id="outline-container-orgf843ed0" class="outline-3">
-<h3 id="orgf843ed0">Weighting field IVA/BVA</h3>
-<div class="outline-text-3" id="text-orgf843ed0">
+<div id="outline-container-org20e9bd1" class="outline-3">
+<h3 id="org20e9bd1">Weighting field IVA/BVA</h3>
+<div class="outline-text-3" id="text-org20e9bd1">
 <p>
 This example has an induction (<code>ind</code>) and collection (<code>col</code>) plane of strips and their IVA/BVA are shown below.  No attempt to "pre guess" the general solution values is attempted.  The domain for weighting fields are larger because they do not share the transnational/periodic symmetry which the drift field has.
 </p>
@@ -421,9 +433,9 @@ This example has an induction (<code>ind</code>) and collection (<code>col</code
 </div>
 
 
-<div id="outline-container-orga577a6d" class="outline-2">
-<h2 id="orga577a6d">Finite-Difference Method</h2>
-<div class="outline-text-2" id="text-orga577a6d">
+<div id="outline-container-orgb440ef3" class="outline-2">
+<h2 id="orgb440ef3">Finite-Difference Method</h2>
+<div class="outline-text-2" id="text-orgb440ef3">
 <p>
 The finite-difference method (FDM) for solving the Laplace equation is
 essentially an iteration of convolutions with a "stencil" on an array.
@@ -478,9 +490,9 @@ difference results are:
 
 
 
-<div id="outline-container-org4c1a222" class="outline-2">
-<h2 id="org4c1a222">Velocity field</h2>
-<div class="outline-text-2" id="text-org4c1a222">
+<div id="outline-container-org2fda6db" class="outline-2">
+<h2 id="org2fda6db">Velocity field</h2>
+<div class="outline-text-2" id="text-org2fda6db">
 <p>
 We take the gradient of the drift field scalar potential to get the
 E-field.  And then given <a href="https://lar.bnl.gov/properties/trans.html">LAr properties for electron transport</a> and a
@@ -492,17 +504,12 @@ vector field itself near the central strip hole:
 
 <img src="test-sandh2d-plots/velocity/drift-mag.png" width="45%">
 <img src="test-sandh2d-plots/velocity/drift-quiver.png" width="45%">
-
-
-<p>
-<b>FIXME why is the velocity so low???</b>
-</p>
 </div>
 </div>
 
-<div id="outline-container-org706ca18" class="outline-2">
-<h2 id="org706ca18">Starts, drift, move</h2>
-<div class="outline-text-2" id="text-org706ca18">
+<div id="outline-container-org06c1952" class="outline-2">
+<h2 id="org06c1952">Path starts, drifts and move</h2>
+<div class="outline-text-2" id="text-org06c1952">
 <p>
 The drift paths through the velocity field are then calculated.  This
 begins by defining a series of starting points ("<i>starts</i>").  These are
@@ -523,17 +530,24 @@ field, the six solutions for the initial value problem can be simply
 copied by integral number of pitch distances in order to populate a 
 larger domain such required for the next step.
 </p>
-
-<p>
-<b>FIXME: make some plot to show this "move" step</b>
-</p>
-</div>
 </div>
 
+<div id="outline-container-org717c716" class="outline-3">
+<h3 id="org717c716">TODO</h3>
+<div class="outline-text-3" id="text-org717c716">
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> The center line path is exactly on a saddle point so "crosses over" to the "wrong" side</li>
+<li class="off"><code>[&#xa0;]</code> The edge path, though not subject to the saddle point problem does misrepresent the nearby phase space by going through the "gap" between strips instead of being directed into the hole.</li>
+<li class="off"><code>[&#xa0;]</code> implement "move" and make some plot to show it</li>
+</ul>
+</div>
+</div>
+</div>
 
-<div id="outline-container-org5da46db" class="outline-2">
-<h2 id="org5da46db">Induce</h2>
-<div class="outline-text-2" id="text-org5da46db">
+
+<div id="outline-container-org8f21b56" class="outline-2">
+<h2 id="org8f21b56">Induce</h2>
+<div class="outline-text-2" id="text-org8f21b56">
 <p>
 The penultimate step is to calculate the induced current on each
 electrode in the domain from each step of each path.  The induced
@@ -552,29 +566,39 @@ current on strip 0 as the same path over strip N (given an
 integral-pitch displacement) induces on strip 0.  The application of
 <i>move</i> operation above provides for this.
 </p>
-
-<p>
-<b>FIXME: add plots of current as tick vs impact</b>
-</p>
-</div>
 </div>
 
-<div id="outline-container-org5732ad3" class="outline-2">
-<h2 id="org5732ad3">Export</h2>
-<div class="outline-text-2" id="text-org5732ad3">
+<div id="outline-container-org46d5e0d" class="outline-3">
+<h3 id="org46d5e0d">TODO</h3>
+<div class="outline-text-3" id="text-org46d5e0d">
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> add plots of current as tick vs impact</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orge0e9156" class="outline-2">
+<h2 id="orge0e9156">Export</h2>
+<div class="outline-text-2" id="text-orge0e9156">
 <p>
 The arrays of induced current finally must be exported to Wire-Cell Toolkit JSON format.
 </p>
+</div>
 
-<p>
-<b>FIXME: develop the code to do this&#x2026;</b>
-</p>
+<div id="outline-container-org19628bf" class="outline-3">
+<h3 id="org19628bf">TODO</h3>
+<div class="outline-text-3" id="text-org19628bf">
+<ul class="org-ul">
+<li class="off"><code>[&#xa0;]</code> develop the code to actually do this&#x2026;</li>
+</ul>
+</div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Brett Viren</p>
-<p class="date">Created: 2021-05-20 Thu 13:21</p>
+<p class="date">Created: 2021-05-20 Thu 14:27</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
