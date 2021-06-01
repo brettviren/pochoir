@@ -89,6 +89,6 @@ def generator(dom, cfg):
         draw_hole_pattern(barr,dom,z_f,widthX,widthZ,holeWidth,Nstrips,1,1,conf)
 
         
-    draw_plane(barr,shape[1]-1,1)
+    #draw_plane(barr,shape[1]-1,1)
 
     return arr,barr

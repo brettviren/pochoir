@@ -3,7 +3,7 @@
     "FirstHoleRadius" : 1.25,
     "SecondHoleRadius" : 1.25,
     "PcbWidth" : 3.2,
-    "PcbLowEdgePosition" : 17,
+    "PcbLowEdgePosition" : 10,
     "Nstrips" : 7,
     "QuarterDimX" : 2.5,
     "QuarterDimY" : 1.67

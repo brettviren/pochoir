@@ -2,7 +2,9 @@
     "FirstHoleRadius" : 1.25,
     "SecondHoleRadius" : 1.25,
     "PcbWidth" : 3.2,
-    "PcbLowEdgePosition" : 17,
-    "CathodePotential" : 2000,
-    "AnodePotential" : -15000
+    "PcbLowEdgePosition" : 10,
+    "CollectionPotential" : 2000,
+    "InductionPotential" : 0,
+    "CathodePotential" : 0,
+    "AnodePotential" : -3500
 }

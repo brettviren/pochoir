@@ -64,6 +64,6 @@ def generator(dom, cfg):
     draw_3Dstrips(arr,barr,qbarr_4,Nstrips,pcb_low_edge,pcb_width,plane)
     
     #set top plane to be a boundary
-    barr[:,:,-1]=1
+    #barr[:,:,-1]=1
 
     return arr,barr

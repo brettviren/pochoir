@@ -374,7 +374,7 @@ def grad(ctx, scalar, gradient):
     pot, md = ctx.obj.get(scalar, True)
     domain = md['domain']
     dom = ctx.obj.get_domain(domain)
-    field = pochoir.arrays.gradient(pot, spacing=dom.spacing)
+    field = pochoir.arrays.gradient(pot, *dom.spacing)
     ctx.obj.put(gradient, field, taxon="gradient",
                 domain=domain, scalar=scalar, command="grad")
 
@@ -473,7 +473,6 @@ def bc_interp(ctx, xcoord,                        # option
     sol2D, md2d = ctx.obj.get(potential2d, True)
     barr3D, md3d = ctx.obj.get(boundary3d, True)
     arr3D = ctx.obj.get(initial3d)
-
     domain2d = md2d['domain']
     domain3d = md3d['domain']
     dom2D = ctx.obj.get_domain(domain2d)
@@ -551,7 +550,6 @@ def induce(ctx, charge, weighting, paths, output):
     npaths, nsteps, ndim = the_paths.shape
     ticks = pochoir.arrays.linspace(pmd['tstart'], pmd['tstop'],
                                     pmd['nsteps'], endpoint=False)
-
     rgi = pochoir.arrays.rgi(dom.linspaces, wpot)
     Q = charge * rgi(the_paths)
     assert len(Q.shape) == 2
@@ -629,6 +627,69 @@ def plot_image(ctx, array, output, scale, units):
         title += f' [{units}]'
     pochoir.plots.image(arr, output, dom, title, scale=scale)
 
+@cli.command("plot-scatter3d")
+@click.option("-a", "--array", type=str, required=True,
+              help="Input array to plot")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
+@click.option("-g", "--gif",
+              default="no", type=click.Choice(["yes","no"]),
+              help="create gif image ")
+@click.pass_context
+def plot_scatter3d(ctx, array, output,gif):
+    '''
+    Visualize a dataset as 3D image pdf + gif
+    '''
+    arr, md = ctx.obj.get(array, True)
+    domain = md.get("domain")
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+    else:
+        dom = ctx.obj.get_domain(doma)
+    title = f'{array}'
+    pochoir.plots.scatt3d(arr, output, dom,gif,title)
+    
+    
+@cli.command("plot-slice3d")
+@click.option("-a", "--array", type=str, required=True,
+              help="Input array to plot")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
+@click.option("-s", "--scale", default="linear",
+              type=click.Choice(["linear","signedlog"]),
+              help="Output graphics file")
+@click.option("-d", "--dim", default="z",
+              type=click.Choice(["x","y","z"]),
+              help="choose axis to slice")
+@click.option("-m", "--magnitude", default="no", type=click.Choice(["yes","no"]),
+              help="calc magnitude")
+@click.option("-i","--index",type=int, default=1.0,
+              help="choose index to slice")
+@click.option("-u", "--units", type=str, default=None,
+              help="The units in which to display magnitude")
+@click.pass_context
+def plot_slice3d(ctx, array, output, scale,dim, magnitude, index, units):
+    '''
+    Visualize a dataset as 2D image
+    '''
+    parr, md = ctx.obj.get(array, True)
+    domain = md.get("domain")
+    if magnitude == "yes" :
+        import numpy
+        arr = numpy.sqrt(parr[0]*parr[0]+parr[1]*parr[1]+parr[2]*parr[2])
+    else:
+        arr = parr
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+    if units is not None:
+        u = pochoir.arrays.fromstr1(units)
+        arr = arr/u
+    title = f'{array}'
+    if units:
+        title += f' [{units}]'
+    pochoir.plots.slice3d(arr, output, dom,scale,dim,index,title)
 
 @cli.command("plot-mag")
 @click.option("-a", "--array", type=str, required=True,
@@ -711,9 +772,37 @@ def plot_drift(ctx, trajectory, paths, output):
         pochoir.plots.drift2d(arr, output, dom, trajectory)
         return
     if arr.shape[-1] == 3:
-        pochoir.plots.drift3d(arr, output, dom, trajectory)
+        pochoir.plots.drift3d(arr, output, dom, trajectory,gif)
     click.echo(f'unsupported array of shape {arr.shape}')
     return -1
+
+@cli.command("plot-drift3d")
+@click.option("-t", "--trajectory", type=int, default=-1,
+              help="Number of trajectories to plot (def: plot only traj 0)")
+@click.option("-p", "--paths", type=str,
+              help="The paths array to plot")
+@click.option("-b", "--boundary", type=str,
+              help="boundary array")
+@click.option("-z", "--zoom", default="no", type=click.Choice(["yes","no"]),
+              help="boundary array")
+@click.option("-g", "--gif",
+              default="no", type=click.Choice(["yes","no"]),
+              help="create gif image ")
+@click.option("-o", "--output",
+              type=click.Path(exists=False, dir_okay=False),
+              help="Output graphics file")
+@click.pass_context
+def plot_drift3d(ctx, trajectory, paths,boundary,zoom,gif, output):
+    '''
+    '''
+    barr, mdb = ctx.obj.get(boundary, True)
+    arr, md = ctx.obj.get(paths, True)
+    domain = md.get("domain")
+    dom = None
+    if domain:
+        dom = ctx.obj.get_domain(domain)
+    title = f'{paths}'
+    pochoir.plots.drift3d_b(arr,barr, output, dom, trajectory,zoom,gif,title)
 
 
 @cli.command("export-vtk-image")
