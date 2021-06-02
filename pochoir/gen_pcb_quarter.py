@@ -118,16 +118,16 @@ def draw_pcb_plane(shape,arr,z,r1,r2,free,val):
         fill_area(arr,barr1,val[0])
         fill_area(arr,barr2,val[0])
 
-def draw_3D_pcb(arr,shape,r1,r2,z_l,v_cath,v_pcb,v_an,pcb_width):
-    volt = (v_cath,v_pcb)
-    
+def draw_3D_pcb(arr,shape,r1,r2,z_l,v_cath,v_coll,v_ind,v_an,pcb_width):
+
     for z in range(shape[2]-1)[1:]:
         if z<z_l+pcb_width and z>z_l:
-            draw_pcb_plane(shape,arr,z,r1,r2,0,(0,v_pcb))
+            draw_pcb_plane(shape,arr,z,r1,r2,0,(0,v_ind))
         else:
             draw_pcb_plane(shape,arr,z,r1,r2,1,(0,0))
+    draw_pcb_plane(shape,arr,z_l,r1,r2,0,(0,v_coll))
     draw_pcb_plane(shape,arr,shape[2]-1,r1,r2,1,(v_an,0))
-    draw_pcb_plane(shape,arr,z_l,r1,r2,0,(0,v_cath))
+    draw_pcb_plane(shape,arr,0,r1,r2,1,(v_cath,0))
 
 def generator(dom, cfg):
     
@@ -135,13 +135,15 @@ def generator(dom, cfg):
     r2 = int(cfg['SecondHoleRadius']/dom.spacing[0])
     pcb_width = int(cfg['PcbWidth']/dom.spacing[0])
     pcb_low_edge = int(cfg['PcbLowEdgePosition']/dom.spacing[0])
+    collectionPotential = cfg['CollectionPotential']
+    inductionPotential = cfg['InductionPotential']
     cathodePotential = cfg['CathodePotential']
     anodePotential = cfg['AnodePotential']
     
     arr = numpy.zeros(dom.shape)
     barr = numpy.ones(dom.shape)
-    draw_3D_pcb(arr,dom.shape,r1,r2,pcb_low_edge,cathodePotential,-1,anodePotential,pcb_width)
+    draw_3D_pcb(arr,dom.shape,r1,r2,pcb_low_edge,-1,collectionPotential,-1,anodePotential,pcb_width)
     barr[arr == 0] = 0
-    draw_3D_pcb(arr,dom.shape,r1,r2,pcb_low_edge,cathodePotential,0,anodePotential,pcb_width)
+    draw_3D_pcb(arr,dom.shape,r1,r2,pcb_low_edge,cathodePotential,collectionPotential,inductionPotential,anodePotential,pcb_width)
 
     return arr,barr

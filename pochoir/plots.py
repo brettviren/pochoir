@@ -72,7 +72,7 @@ def set_limits(limits):
         plt.ylim(*ylim)
 
 
-def quiver(varr, fname, domain, step=1, limits=None, scale=1.0):
+def quiver(varr, fname, domain, step=100, limits=None, scale=1.0):
     '''
     Plot a vector field.
 
@@ -89,7 +89,7 @@ def quiver(varr, fname, domain, step=1, limits=None, scale=1.0):
 
     # possibly decimate
     slcs = tuple([slice(0,s,step) for s in varr[0].shape])
-
+    skip = (slice(None,None,2),slice(None,None,2),slice(None,None,50))
     plt.clf()
     if ndim == 2:               # 2D
         plt.quiver(mg[1][slcs], mg[0][slcs],
@@ -100,12 +100,14 @@ def quiver(varr, fname, domain, step=1, limits=None, scale=1.0):
     else:                       # 3D
         fig = plt.figure()
         ax = fig.gca(projection='3d')
-
-        ax.quiver(mg[0][slcs], mg[1][slcs], mg[2][slcs],
-                  varr[0][slcs], varr[1][slcs], varr[2][slcs],
+        ax.set_xlim3d(0,domain.shape[0]*domain.spacing[0])
+        ax.set_ylim3d(0,domain.shape[1]*domain.spacing[1])
+        ax.set_zlim3d(0,domain.shape[2]*domain.spacing[2])
+        ax.quiver(mg[0][skip], mg[1][skip], mg[2][skip],
+                  varr[0][skip], varr[1][skip], varr[2][skip],
                   length=domain.spacing[0], normalize=True)
         set_limits(limits)
-
+    plt.show()
     savefig(fname)
 
 def drift2d(paths, output, domain, trajectory):
@@ -138,4 +140,87 @@ def drift3d(varr, fname, domain, trajectory):
         for i in range(trajectory):
             xdata,ydata,zdata = varr[i][:,0],varr[i][:,1],varr[i][:,2]
             ax.plot3D(xdata,ydata,zdata)
+    savefig(fname)
+    
+def drift3d_b(varr, barr, fname, domain, trajectory,zoom,gif,title=""):
+    '''
+    Plot 3D drift paths and boundary array
+    '''
+    arr1 = numpy.array(varr)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.set_xlim3d(0,domain.shape[0]*domain.spacing[0])
+    ax.set_ylim3d(0,domain.shape[1]*domain.spacing[1])
+    if zoom == "yes":
+        ax.set_zlim3d(0,200)#domain.shape[2])
+        ax.set_title(title+"(zoomed)")
+    else:
+        ax.set_title(title)
+        ax.set_zlim3d(0,domain.shape[2]*domain.spacing[2])
+    
+    arr2 = numpy.array(barr)
+    x,y,z = arr2.nonzero()
+    ax.scatter(x*domain.spacing[0],y*domain.spacing[1],z*domain.spacing[2],s=0.7)
+    ax.set_xlabel('X, mm')
+    ax.set_ylabel('Y, mm')
+    ax.set_zlabel('Z, mm')
+    
+    if(len(varr)<trajectory):
+        raise ValueError("Not enough trajectories to plot")
+    if(trajectory==-1):
+        xdata,ydata,zdata = arr1[0][:,0],arr1[0][:,1],arr1[0][:,2]
+        ax.scatter(xdata,ydata,zdata)
+    else:
+        for i in range(trajectory):
+            xdata,ydata,zdata = arr1[i][:,0],arr1[i][:,1],arr1[i][:,2]
+            ax.scatter(xdata,ydata,zdata)
+    savefig(fname)
+    fname2 = fname[:-4]
+    if gif == "yes":
+        def rotate(angle):
+            ax.view_init(azim=angle)
+        import matplotlib.animation as animation
+        print("Making animation")
+        rot_animation = animation.FuncAnimation(fig, rotate, frames=numpy.arange(0, 362, 2), interval=100)
+        rot_animation.save(fname2+'.gif', dpi=80, writer='imagemagick')
+    
+def scatt3d(varr,fname,domain,gif,title=""):
+    arr = numpy.array(varr)
+    plt.clf()
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.set_xlim3d(0,domain.shape[0]*domain.spacing[0])
+    ax.set_ylim3d(0,domain.shape[1]*domain.spacing[1])
+    ax.set_zlim3d(0,domain.shape[2]*domain.spacing[2])
+    x,y,z = arr.nonzero()
+    ax.scatter(x*domain.spacing[0],y*domain.spacing[1],z*domain.spacing[2],s=0.7)
+    ax.set_xlabel('X, mm')
+    ax.set_ylabel('Y, mm')
+    ax.set_zlabel('Z, mm')
+    ax.set_title(title);
+    savefig(fname)
+    #plt.show()
+    fname2 = fname[:-4]
+    if gif == "yes":
+        def rotate(angle):
+            ax.view_init(azim=angle)
+        import matplotlib.animation as animation
+        print("Making animation")
+        rot_animation = animation.FuncAnimation(fig, rotate, frames=numpy.arange(0, 362, 2), interval=100)
+        rot_animation.save(fname2+'.gif', dpi=80, writer='imagemagick')
+    
+def slice3d(varr,fname,domain,scale,dim,index,title=""):
+    
+    arr = arrays.to_numpy(varr)
+    if scale == "signedlog":
+        arr = signedlog(arr)
+    plt.title(title+"(scale:"+scale+", slice:"+dim+f', index: {index})')
+    print(f'plotting: {arr.shape} {fname}')
+    if dim == "x":
+        plt.pcolormesh(arr[index,:,:], shading='auto')
+    if dim == "y":
+        plt.pcolormesh(arr[:,index,:], shading='auto')
+    if dim == "z":
+        plt.pcolormesh(arr[:,:,index], shading='auto')
+    plt.colorbar()
     savefig(fname)
