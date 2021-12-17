@@ -40,13 +40,14 @@ def solve(iarr, barr, periodic, prec, epoch, nepochs):
     '''
 
     err = None
+    
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    bi_core = torch.tensor(iarr*barr, requires_grad=False).to(device)
+    mutable_core = torch.tensor(numpy.invert(barr.astype(numpy.bool)), requires_grad=False).to(device)
+    tmp_core = torch.zeros(iarr.shape, requires_grad=False).to(device)
 
-    bi_core = torch.tensor(iarr*barr, requires_grad=False)
-    mutable_core = torch.tensor(numpy.invert(barr), requires_grad=False)
-    tmp_core = torch.zeros(iarr.shape, requires_grad=False)
-
-    barr_pad = torch.tensor(numpy.pad(barr, 1), requires_grad=False)
-    iarr_pad = torch.tensor(numpy.pad(iarr, 1), requires_grad=False)
+    barr_pad = torch.tensor(numpy.pad(barr, 1), requires_grad=False).to(device)
+    iarr_pad = torch.tensor(numpy.pad(iarr, 1), requires_grad=False).to(device)
     core = core_slices1(iarr_pad)
 
     # Get indices of fixed boundary values and values themselves
@@ -69,7 +70,7 @@ def solve(iarr, barr, periodic, prec, epoch, nepochs):
                 #print(f'maxerr: {maxerr}')
                 if prec and maxerr < prec:
                     print(f'fdm reach max precision: {prec} > {maxerr}')
-                    return (iarr_pad[core], err)
+                    return (iarr_pad[core].cpu(), err.cpu())
     print(f'fdm reach max epoch {epoch} x {nepochs}, last prec {prec} < {maxerr}')
-    return (iarr_pad[core], err)
+    return (iarr_pad[core].cpu(), err.cpu())
 
