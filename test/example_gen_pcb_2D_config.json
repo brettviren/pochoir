@@ -4,6 +4,6 @@
     "StripWidthX" : 5.2,
     "StripWidthZ" : 3.2,
     "HoleDiameter" : 2.5,
-    "LowEdgePosition" : 10,
+    "LowEdgePosition" : 17,
     "Nstrips" : 21
 }
