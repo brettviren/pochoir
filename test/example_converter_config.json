@@ -1,0 +1,16 @@
+{
+    "tstart" : 0.0,
+    "origin" : 200.0,
+    "speed" : 0.0016,
+    "period" : 100.0,
+    "starting_wire_pitch" : -17.5,
+    "stripLength" : 5,
+    "npaths" : 6,
+    "totstrip" : 7,
+    "planeUlocation" : 3.2,
+    "planeUpitch" : 5.0,
+    "planeVlocation" : 3.2,
+    "planeVpitch" : 5.0,
+    "planeWlocation" : 0,
+    "planeWpitch" : 5.0
+}

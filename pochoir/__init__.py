@@ -12,6 +12,7 @@ from . import plots
 from . import drift
 from . import vtkexport
 from . import srdot
+from . import schema
 
 from .version import version
 

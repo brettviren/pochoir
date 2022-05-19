@@ -489,6 +489,55 @@ def bc_interp(ctx, xcoord,                        # option
     ctx.obj.put(initial, arr, taxon="initial", **params)
     ctx.obj.put(boundary, barr, taxon="boundary", **params)
 
+@cli.command("extendwf")
+@click.option("-p", "--potential2d", type=str,
+              help="The input 2D scalar potential array")
+@click.option("-P", "--potential3d", type=str,
+              help="The input 3D scalar potential array")
+@click.option("-n", "--nstrips", default=10.0,
+              help="Max number of strips from the central for the extension")
+@click.option("-o","--output", type=str,
+              help="Output enlarged weighting field")
+@click.pass_context
+def extendwf(ctx,
+              potential2d, potential3d,nstrips,
+              output
+              ):
+    '''
+    Extend 3D weigting filed using 2D weighting field to full 2D volume
+    
+    Note: needs more testing and fixes, put as a concept
+    '''
+    sol2D, md2d = ctx.obj.get(potential2d, True)
+    sol3D, md3d = ctx.obj.get(potential3d, True)
+    domain2d = md2d['domain']
+    domain3d = md3d['domain']
+    dom2D = ctx.obj.get_domain(domain2d)
+    dom3D = ctx.obj.get_domain(domain3d)
+    import numpy
+    #at the moment assume that 2d and 3d simulations have same properties with some magic numbers (including shifts in 2D solution)
+    #NEEDS FIX for better calculation
+    onestrip = dom3D.shape[0]/7.0
+    newXdim = int((nstrips*2+1)*onestrip)
+    arr = numpy.zeros((newXdim,dom3D.shape[1],dom3D.shape[2]))
+    for i in range(0,newXdim):
+        if i<onestrip*7:
+            for j in range(0,dom3D.shape[1]):
+                arr[i,j,:] = sol2D[i+int(onestrip/2.0),:]
+        if i>=onestrip*7 and i<onestrip*14:
+            for j in range(0,dom3D.shape[1]):
+                arr[i,j,:] = sol3D[i-dom3D.shape[0],j,:]
+        if i>=onestrip*14:
+            for j in range(0,dom3D.shape[1]):
+                arr[i,j,:] = sol2D[i+int(0.25*onestrip),:]
+    dom = pochoir.domain.Domain(arr.shape, 0.1, [0.0,0.0,0.0])
+    domain = "domain/weight3dextend"
+    ctx.obj.put_domain(domain, dom)
+    params = dict(command="extendwf",domain=domain,
+                  potential2d=potential2d,potential3d=potential3d,nstrips=nstrips, output=output )
+    ctx.obj.put(output, arr, taxon="output", **params)
+
+
 
 @cli.command()
 @click.option("-i", "--input", type=str, required=True,
@@ -528,15 +577,22 @@ def move_paths(ctx, input, translation, output):
               help="The input scalar weighting potential")
 @click.option("-p","--paths", type=str,
               help="The input drift paths array")
+@click.option("-a","--average", default=0.0,
+              help="Average N paths along strip")
+@click.option("-n","--nstrips", default=1.0,
+              help="Calculate current for n strips from the central as well ")
 @click.option("-O", "--output", type=str,
               help="Output array holding induced current waveforms")
 @click.pass_context
-def induce(ctx, charge, weighting, paths, output):
+def induce(ctx, charge, weighting, paths, average,nstrips, output):
     '''
     Calculate induced current.
 
     The current is that induced by the given charge moving along the
     paths and in the presence of a scalar weighting potential.
+    
+    Note: Paths are assumed to be provided in order of averaging blocks
+    current for the strips culculated based on 50L detector mirror symmetry
     '''
     wpot, wmd = ctx.obj.get(weighting, True)
     try:
@@ -544,27 +600,122 @@ def induce(ctx, charge, weighting, paths, output):
     except KeyError:
         click.echo(f'no domain for {weighting}.  metadata:\n{wmd}')
         return -1
+    import numpy
     dom = ctx.obj.get_domain(domain)
-
     the_paths, pmd = ctx.obj.get(paths, True)
     npaths, nsteps, ndim = the_paths.shape
     ticks = pochoir.arrays.linspace(pmd['tstart'], pmd['tstop'],
                                     pmd['nsteps'], endpoint=False)
     rgi = pochoir.arrays.rgi(dom.linspaces, wpot)
-    Q = charge * rgi(the_paths)
+    shift_x = dom.shape[0]*dom.spacing[0]/2.0
+    shift_y = 0
+    shifted_paths = []
+    if nstrips>1:
+        dx = dom.shape[0]*dom.spacing[0]/nstrips
+        for i in range(0,int(nstrips)):
+            for j in range(0,len(the_paths)):
+                newpath = [[(2.0*i+1.0)*dx/2.0+x[0],x[1],x[2]] for x in the_paths[j]]
+                shifted_paths.append(newpath)
+    if nstrips<=1:
+        for i in range(0,len(the_paths)):
+            newpath = [[shift_x+x[0],x[1]+shift_y,x[2]] for x in the_paths[i]]
+            shifted_paths.append(newpath)
+        shifted_paths=numpy.array(shifted_paths)
+    Q = charge * rgi(shifted_paths) #/ units.V
     assert len(Q.shape) == 2
-    assert Q.shape[0] == npaths
+    #assert Q.shape[0] == npaths
     assert Q.shape[1] == nsteps
 
     dQ = Q[:, 1:] - Q[:, :-1]
     dT = ticks[1:] - ticks[:-1]
-    I = dQ/dT
-
+    I = []
+    I_tot = dQ/dT
+    if average>0:
+        tot_paths = int(len(I_tot)/average)
+        for i in range(0,len(I_tot),int(average)):
+            I_temp = numpy.zeros(I_tot[0].shape)
+            for p in range(0,int(average)):
+                I_temp=I_temp+numpy.asarray(I_tot[i+p])
+            I_temp = I_temp/average
+            I.append(I_temp.tolist())
+    if average<=0:
+        I=I_tot
     ctx.obj.put(output, I, command="induce", taxon="current",
                 charge = charge,
-                domain=domain, paths=paths, weighting=weighting)
+                domain=domain, paths=paths,average=average,nsteps=nsteps, weighting=weighting)
 
-
+@cli.command("convertfr")
+@click.option("-u","--uinput", type=str,
+              help="Input averaged current for indcution1")
+@click.option("-v","--vinput", type=str,
+              help="Input averaged current for induction2")
+@click.option("-w","--winput", type=str,
+              help="Input averaged current for collection")
+@click.option("-O", "--output", type=str,
+              help="Output file name")
+@click.argument("configs", nargs=-1)
+@click.pass_context
+def convertfr(ctx, uinput,vinput,winput,output, configs):
+    '''
+    Convert Field Responce in json WireCell format
+    
+    Takes current as an input
+    
+    Note: Due to symmetry in 50L detector strip configuration current version requires following input:
+     Current from 6 paths it transverse strip direction. Paths cover only half of the strip. Curent should be averaged along the strip prior to conversion. Paths should be chosen such with the same distance between them + first should start in the ~middle on the strip and last one as close to the middle of the pitch between strips as possible
+    '''
+    from . import schema
+    from . import persist
+    import numpy
+    
+    cfg = dict()
+    for config in configs:
+        cfg.update(json.loads(open(config,'rb').read().decode()))
+    curr_I1, curr_I1md = ctx.obj.get(uinput, True)
+    curr_I2, curr_I2md = ctx.obj.get(vinput, True)
+    curr_C, curr_Cmd = ctx.obj.get(winput, True)
+    anti_drift_axis = (1.0, 0.0, 0.0)
+    origin = cfg["origin"]
+    speed = cfg["speed"]
+    tstart = cfg["tstart"]
+    period = cfg["period"]
+    pathR_I1 = []
+    pathR_I2 = []
+    pathR_C = []
+    pitchpos = cfg["starting_wire_pitch"]
+    nstrips = cfg["totstrip"]
+    npaths = cfg["npaths"]
+    in_strip_shift = abs(pitchpos/nstrips/(npaths-1.0))
+    between_strip_shift = abs(pitchpos/nstrips)
+    for i in range(npaths-1,nstrips*npaths,npaths):
+        for j in range(0,npaths):
+            pr_I1 = schema.PathResponse(curr_I1[i-j],pitchpos,wirepos=0)
+            pr_I2 = schema.PathResponse(curr_I2[i-j],pitchpos,wirepos=0)
+            pr_C = schema.PathResponse(curr_C[i-j],pitchpos,wirepos=0)
+            pathR_I1.append(pr_I1)
+            pathR_I2.append(pr_I2)
+            pathR_C.append(pr_C)
+            if j<npaths-1:
+                pitchpos = pitchpos+in_strip_shift
+        pitchpos=pitchpos+between_strip_shift
+    planes=[]
+    planeid=0
+    location=cfg["planeUlocation"]
+    pitch=cfg["planeUpitch"]
+    plr_I1 = schema.PlaneResponse(pathR_I1,planeid,location,pitch)
+    planes.append(plr_I1)
+    planeid=1
+    location=cfg["planeVlocation"]
+    pitch=cfg["planeVpitch"]
+    plr_I2 = schema.PlaneResponse(pathR_I2,planeid,location,pitch)
+    planes.append(plr_I2)
+    planeid=2
+    location=cfg["planeWlocation"]
+    pitch=cfg["planeWpitch"]
+    plr_C = schema.PlaneResponse(pathR_C,planeid,location,pitch)
+    planes.append(plr_C)
+    fr = schema.FieldResponse(planes,anti_drift_axis, origin, tstart, period, speed)
+    persist.dumpfr(output,fr)
     
 @cli.command()
 @click.option("-w","--weighting", type=str,
